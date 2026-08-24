@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  lockgo-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lockgo-platform
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgres://lockgo_user:lockgo_secret@postgres:5432/lockgo_db
+      - REDIS_URL=redis://redis:6379
+      - MQTT_BROKER_URL=mqtt://mqtt-broker:1883
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mqtt-broker:
+        condition: service_started
+
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: lockgo-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=lockgo_user
+      - POSTGRES_PASSWORD=lockgo_secret
+      - POSTGRES_DB=lockgo_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - lockgo_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lockgo_user -d lockgo_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: lockgo-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - lockgo_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0
+    container_name: lockgo-mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - lockgo_mqttdata:/mosquitto/data
+
+volumes:
+  lockgo_pgdata:
+  lockgo_redisdata:
+  lockgo_mqttdata:

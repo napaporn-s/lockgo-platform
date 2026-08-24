@@ -1,0 +1,33 @@
+name: LOCKGO CI/CD Platform Pipeline
+
+on:
+  push:
+    branches: [ main, master, "feat/**", "fix/**" ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  verify:
+    name: Typecheck, Lint & Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      - name: TypeScript Static Gate (0 Errors)
+        run: bun run typecheck
+
+      - name: Run Automated Test Suite (23 Tests: Concurrency, Security, IoT, Policies)
+        run: bun test
+
+      - name: Build Docker Container
+        run: docker build -t lockgo-platform:latest .

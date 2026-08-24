@@ -1,0 +1,32 @@
+{
+  "name": "lockgo-platform",
+  "version": "1.0.0",
+  "description": "LOCKGO — Production-Grade Next-Gen Smart Locker Platform",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:concurrency": "bun test tests/concurrency/double-booking.test.ts",
+    "test:security": "bun test tests/security/dynamic-qr.test.ts",
+    "test:iot": "bun test tests/iot/reconciliation.test.ts",
+    "mcp": "bun run src/mcp/server.ts"
+  },
+  "keywords": [
+    "lockgo",
+    "smart-locker",
+    "iot",
+    "concurrency",
+    "mcp",
+    "security"
+  ],
+  "author": "Napaporn Suttinarksombat (Koy)",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "bun-types": "^1.4.0",
+    "typescript": "^5.6.0"
+  }
+}
