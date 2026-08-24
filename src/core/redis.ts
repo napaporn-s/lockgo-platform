@@ -19,6 +19,16 @@ export class RedisClient {
   }
 
   /**
+   * SET with TTL
+   */
+  public async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
+    this.store.set(key, {
+      value,
+      expiresAt: ttlSeconds ? Date.now() + ttlSeconds * 1000 : Infinity,
+    });
+  }
+
+  /**
    * SETNX with TTL (Atomic Set If Not Exists)
    */
   public async setnx(key: string, value: string, ttlSeconds: number): Promise<boolean> {
@@ -47,6 +57,35 @@ export class RedisClient {
   public async del(key: string): Promise<number> {
     const deleted = this.store.delete(key);
     return deleted ? 1 : 0;
+  }
+
+  public async delete(key: string): Promise<boolean> {
+    return this.store.delete(key);
+  }
+
+  public async increment(key: string): Promise<number> {
+    const entry = this.store.get(key);
+    let currentVal = 0;
+    let expiresAt = Infinity;
+
+    if (entry && !this.isExpired(entry)) {
+      currentVal = parseInt(entry.value, 10) || 0;
+      expiresAt = entry.expiresAt;
+    }
+
+    const nextVal = currentVal + 1;
+    this.store.set(key, {
+      value: nextVal.toString(),
+      expiresAt,
+    });
+    return nextVal;
+  }
+
+  public async expire(key: string, ttlSeconds: number): Promise<boolean> {
+    const entry = this.store.get(key);
+    if (!entry || this.isExpired(entry)) return false;
+    entry.expiresAt = Date.now() + ttlSeconds * 1000;
+    return true;
   }
 
   /**

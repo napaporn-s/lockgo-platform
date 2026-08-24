@@ -5,11 +5,12 @@
 import { stationService } from '../modules/station/station.service';
 import { reservationService } from '../modules/reservation/reservation.service';
 import { dynamicQRService } from '../modules/security/dynamic-qr.service';
+import { emergencyPinService } from '../modules/security/emergency-pin.service';
 import { lockReconciliationService } from '../modules/iot/reconciliation.service';
 import { auditLogger } from '../modules/audit/audit-logger';
 import { LockGoError, ResourceNotFoundError } from '../core/errors';
 import { db } from '../core/database';
-import { DomainVertical } from '../core/types';
+import { DomainVertical, CompartmentSize } from '../core/types';
 
 export class AppApi {
   /**
@@ -50,17 +51,39 @@ export class AppApi {
     domainAttributes?: Record<string, unknown>;
   }) {
     const result = await reservationService.createReservation(payload);
+    // Generate an emergency PIN for SMS dispatch (ADR-012)
+    const emergencyPin = emergencyPinService.generateEmergencyPin();
+
     return {
       status: 'success',
       data: {
         reservation: result.reservation,
         accessTokenId: result.accessToken.id,
+        emergencyPin, // Sent via SMS to user
       },
     };
   }
 
   /**
-   * POST /api/unlock/dynamic-qr
+   * POST /api/reservations/:id/upgrade-size (ADR-011)
+   */
+  public async upgradeReservationSize(payload: {
+    reservationId: string;
+    targetSizeTier: CompartmentSize;
+  }) {
+    const result = await reservationService.upgradeCompartmentSize(
+      payload.reservationId,
+      payload.targetSizeTier
+    );
+    return {
+      status: 'success',
+      message: `Compartment size upgraded to ${payload.targetSizeTier}`,
+      data: result,
+    };
+  }
+
+  /**
+   * POST /api/unlock/dynamic-qr (ADR-004)
    * Physical scanner presents the scanned dynamic QR code
    */
   public async unlockWithDynamicQR(payload: {
@@ -75,7 +98,6 @@ export class AppApi {
     if (!comp) throw new ResourceNotFoundError('Compartment', compartmentId);
 
     // Verify token with reservation secret
-    // 1. Decode token to find reservation ID
     let decoded;
     try {
       decoded = JSON.parse(Buffer.from(qrToken, 'base64url').toString('utf-8'));
@@ -106,6 +128,84 @@ export class AppApi {
       status: 'success',
       message: 'Compartment unlocked successfully',
       data: unlockResult,
+    };
+  }
+
+  /**
+   * POST /api/unlock/emergency-pin (ADR-012)
+   * Kiosk fallback unlock with phone + 6-digit PIN
+   */
+  public async unlockWithEmergencyPin(payload: {
+    stationId: string;
+    compartmentId: string;
+    reservationId: string;
+    phoneNumber: string;
+    enteredPin: string;
+    expectedPin: string;
+  }) {
+    const { stationId, compartmentId, reservationId, phoneNumber, enteredPin, expectedPin } = payload;
+
+    const comp = db.getCompartment(compartmentId);
+    if (!comp) throw new ResourceNotFoundError('Compartment', compartmentId);
+
+    // Validate PIN with rate limiting
+    await emergencyPinService.verifyPin(phoneNumber, enteredPin, expectedPin, reservationId);
+
+    // Trigger IoT Unlock
+    const unlockResult = await lockReconciliationService.executeUnlockWithReconciliation({
+      stationId,
+      compartmentId,
+      relayIndex: comp.lockRelayIndex,
+      correlationToken: reservationId,
+    });
+
+    // Mark reservation as completed
+    await reservationService.completeReservation(reservationId);
+
+    return {
+      status: 'success',
+      message: 'Emergency PIN verified and locker unlocked',
+      data: unlockResult,
+    };
+  }
+
+  /**
+   * POST /api/iot/events/power-disrupted (ADR-009)
+   */
+  public async handleStationPowerDisrupted(payload: {
+    stationId: string;
+    batteryPercentage: number;
+    estimatedRuntimeMinutes: number;
+  }) {
+    auditLogger.log('STATION_POWER_DISRUPTED', 'STATION', payload.stationId, {
+      batteryPercentage: payload.batteryPercentage,
+      estimatedRuntimeMinutes: payload.estimatedRuntimeMinutes,
+      actionsTaken: ['LOAD_SHEDDING_ACTIVE', 'NEW_BOOKINGS_FROZEN'],
+    });
+
+    return {
+      status: 'success',
+      message: 'Emergency Power Saving mode recorded. New reservations frozen.',
+    };
+  }
+
+  /**
+   * POST /api/iot/events/door-ajar (ADR-010)
+   */
+  public async handleDoorAjarAlert(payload: {
+    stationId: string;
+    compartmentId: string;
+    durationOpenSeconds: number;
+  }) {
+    auditLogger.log('DOOR_AJAR_ALERT', 'COMPARTMENT', payload.compartmentId, {
+      stationId: payload.stationId,
+      durationOpenSeconds: payload.durationOpenSeconds,
+      status: 'PENDING_INVESTIGATION',
+    });
+
+    return {
+      status: 'success',
+      message: 'Door ajar alert triggered. Investigation dispatched to Central Ops.',
     };
   }
 

@@ -3,132 +3,128 @@
 > **Role:** Technical Project Manager & Delivery Lead  
 > **Platform:** LOCKGO — Next-Gen Smart Locker Platform  
 > **Author:** Napaporn Suttinarksombat (Koy) & Elena (Technical Assistant)  
-> **Version:** 1.0.0 (Production Delivery Blueprint)
+> **Version:** 1.7.0 (Comprehensive Enterprise Delivery Blueprint with MTBF & Reliability Standards)
 
 ---
 
 ## 1. Project Charter & Delivery Strategy
 
 ### 1.1 Objective
-Deliver a production-ready, highly resilient, and verifiable prototype of the LOCKGO Smart Locker Platform within the **72-hour assessment window**, demonstrating Senior AI Fullstack Platform Engineering mastery across System Design, Concurrency, Hardware/IoT Resilience, AI Agent Orchestration, and DevOps Governance.
+ส่งมอบแพลตฟอร์มต้นแบบ Smart Locker "LOCKGO" ในระดับ **Production-Grade Prototype** ภายในกรอบเวลา **72 ชั่วโมง** โดยสะท้อนมาตรฐานวิศวกรรมระดับ **Senior AI Fullstack Platform Engineer** ครอบคลุมทั้ง System Architecture, Concurrency Defense, Hardware/IoT Fault-Tolerance, Dynamic Security, Model Context Protocol (MCP) และ DevOps Governance
 
 ### 1.2 Pragmatic Scope Management (Anti-Overengineering Principle)
-In alignment with **Karpathy Law A1 (Simplicity First)** and **A4 (Design Laws)**:
-- **Focus on Critical Value Paths:** Build deep, rock-solid implementations for the core concurrency engine, dynamic security tokens, IoT hardware simulation, and domain extension interfaces.
-- **Pragmatic Boundary:** Rather than setting up 15 distinct Kubernetes clusters or raw hardware breadboards for a 72-hour assessment, implement a **clean Modular Monolith** in TypeScript with Docker Compose, embedded Redis/PostgreSQL, automated unit/integration/concurrency tests, and an IoT simulator verifying realistic edge edge cases.
+ตามกฎ **Karpathy Law A1 (Simplicity First)** และ **A4 (Design Laws)**:
+- **เน้นแก่นคุณค่าสูงสุด (High-Value Critical Paths):** พัฒนา Modular Monolith ด้วย TypeScript ที่มีความสมบูรณ์แบบของ Business Logic, 3-Layer Concurrency Locking (0.000% Double Booking), Dynamic TOTP QR 30s + Nonce Burner, และ IoT 2-Phase Reconciliation
+- **ขอบเขตที่สมเหตุสมผล:** ไม่ตั้ง Kubernetes Cluster 15 โหนด แต่ใช้ **Docker Compose, PostgreSQL 16 + PostGIS, Redis Cluster และ IoT Hardware Simulator** ที่จำลองสถานการณ์เครือข่ายหลุดและเซนเซอร์ติดขัดได้อย่างสมจริง 100%
 
 ---
 
-## 2. Work Breakdown Structure (WBS) & MoSCoW Prioritization
+## 2. กฎหมาย มาตรฐานอุตสาหกรรม และการขอใบอนุญาต (Regulatory Standards & Certifications)
 
 ```mermaid
-mindmap
-  root((LOCKGO Platform))
-    Must Have (P0)
-      Station & Compartment Registry
-      3-Layer Concurrency Engine (0% Double Booking)
-      Dynamic TOTP/HMAC QR & Single-Use Nonce
-      IoT MQTT Protocol & 2-Phase Lock Reconciliation
-      Append-Only Audit Logging
-      Automated Unit & Concurrency Test Suite
-    Should Have (P1)
-      Multi-Domain Extension Engine (Food, Cold, Laundry, Parcel)
-      Payment Webhook Reconciliation
-      Docker Compose & Multi-Stage Dockerfile
-      GitHub Actions CI/CD Pipeline
-      Model Context Protocol (MCP) Server
-    Could Have (P2)
-      Web Admin Telemetry Dashboard (Vue/Nuxt)
-      SRE Incident Runbooks & Alert Rules
-      OpenTelemetry Distributed Tracing Config
-    Won't Have This Iteration (Out of Scope)
-      Full Mobile iOS/Android Binary Build
-      Real Cellular 4G Hardware Modems (Mocked via IoT Daemon)
-      Direct Bank Host-to-Host Settlement Integration
+flowchart TD
+    subgraph Telecom ["1. มาตรฐานโทรคมนาคม (กสทช.)"]
+        SDoC["SDoC (Suppliers' Declaration of Conformity)\n• โมดูล 4G/5G และ BLE สำเร็จรูป (5 - 10 วัน)\n• พ.ร.บ. องค์กรจัดสรรคลื่นความถี่ฯ"]
+    end
+
+    subgraph Electrical ["2. ความปลอดภัยทางไฟฟ้า (มอก. & สภาวิศวกร)"]
+        TIS["มอก. 62368-เล่ม 1-2563 (Safety ICT Equipment)\n• Single Line Diagram & Safety Inspection\n• ลงนามโดย ภาคี/สามัญวิศวกรไฟฟ้า (พ.ร.บ. วิศวกร 2542)"]
+    end
+
+    subgraph SitePermit ["3. การขอเข้าพื้นที่ & ประกันภัย (ศูนย์การค้า/อาคาร)"]
+        WorkPermit["Method Statement & Risk Assessment (ยื่นล่วงหน้า 3 - 7 วัน)\n• ประกัน Public Liability Insurance 1 - 5 ล้านบาท\n• พ.ร.บ. ความปลอดภัย อาชีวอนามัยฯ 2554"]
+    end
+
+    subgraph PaymentKYB ["4. Payment Gateway Onboarding (ธปท. & ปปง.)"]
+        KYB["KYB/AML Verification (7 - 14 วันทำการ)\n• ตรวจสอบ Refund Policy & PDPA Privacy Policy\n• พ.ร.บ. ระบบการชำระเงิน 2560 & พ.ร.บ. ฟอกเงิน 2542"]
+    end
 ```
 
----
-
-## 3. Detailed 72-Hour Calendar Execution Timeline
-
-```mermaid
-gantt
-    title LOCKGO 72-Hour Execution Roadmap
-    dateFormat  YYYY-MM-DD HH:mm
-    axisFormat  Day %d %H:00
-
-    section Phase 1: BA & SA
-    Requirements & Domain Extensibility   :done,    des1, 2026-08-24 18:00, 2026-08-24 19:30
-    System Architecture & ADRs           :done,    des2, 2026-08-24 19:30, 2026-08-24 21:00
-
-    section Phase 2: PM Planning
-    WBS, Risk Register & Traceability     :active,  pm1,  2026-08-24 21:00, 2026-08-24 22:00
-
-    section Phase 3: Core Implementation
-    Core Types, Config & Database Layer   :         dev1, 2026-08-24 22:00, 2026-08-25 02:00
-    Station & Compartment Service         :         dev2, 2026-08-25 02:00, 2026-08-25 05:00
-    3-Layer Concurrency Reservation Engine:         dev3, 2026-08-25 05:00, 2026-08-25 08:00
-    Dynamic TOTP/HMAC Security Module     :         dev4, 2026-08-25 08:00, 2026-08-25 11:00
-    IoT Gateway & 2-Phase Reconciliation  :         dev5, 2026-08-25 11:00, 2026-08-25 14:00
-    Domain Extensions (Food, Cold, Laundry):        dev6, 2026-08-25 14:00, 2026-08-25 17:00
-    REST API Routes & Error Handling      :         dev7, 2026-08-25 17:00, 2026-08-25 20:00
-
-    section Phase 4: Testing & QA
-    Unit Tests & Security Token Tests     :         qa1,  2026-08-25 20:00, 2026-08-25 23:00
-    Concurrency Race Condition Stress Test:         qa2,  2026-08-25 23:00, 2026-08-26 03:00
-    IoT Edge Fault Tolerance & Chaos Tests:         qa3,  2026-08-26 03:00, 2026-08-26 06:00
-
-    section Phase 5: DevOps, MCP & AI
-    CI/CD Pipeline, Docker & Containerization:      ops1, 2026-08-26 06:00, 2026-08-26 10:00
-    Model Context Protocol (MCP) Server   :         ai1,  2026-08-26 10:00, 2026-08-26 13:00
-    AI Governance & 6-Month AI Roadmap    :         ai2,  2026-08-26 13:00, 2026-08-26 16:00
-    SRE Incident Response Runbooks        :         ops2, 2026-08-26 16:00, 2026-08-26 19:00
-
-    section Phase 6: Final Review & Delivery
-    Lead-Level Pre-Ship Checklist Audit   :         rev1, 2026-08-26 19:00, 2026-08-26 22:00
-    Submission Package Packaging          :         rev2, 2026-08-26 22:00, 2026-08-27 12:00
-```
+| ด้านการกำกับดูแล | มาตรฐาน / กฎหมายอ้างอิง | ระยะเวลาดำเนินการ (Lead Time) | รายละเอียดและข้อกำหนดทางเทคนิค |
+|---|---|---|---|
+| **1. อุปกรณ์โทรคมนาคม** | **สำนักงาน กสทช.**<br>(พ.ร.บ. องค์กรจัดสรรคลื่นความถี่ฯ) | 5 - 10 วันทำการ (Pre-certified) | โมเด็ม 4G/5G และ Bluetooth BLE ต้องผ่านการขึ้นทะเบียน **SDoC (Suppliers' Declaration of Conformity)** ก่อนนำมาใช้งานจริง |
+| **2. ความปลอดภัยทางไฟฟ้า** | **มอก. 62368-เล่ม 1-2563** & **พ.ร.บ. วิศวกร พ.ศ. 2542** | 2 - 3 สัปดาห์ | - Power Supply ต้องได้รับ มอก. 62368-1<br>- แบบวงจรไฟฟ้า (Single Line Diagram) ต้องลงนามรับรองโดย **ภาคีวิศวกรไฟฟ้า หรือสามัญวิศวกรไฟฟ้า** |
+| **3. การเข้าทำงานในพื้นที่** | **พ.ร.บ. ความปลอดภัย อาชีวอนามัยฯ พ.ศ. 2554** | 3 - 7 วันทำการ | - ยื่นเอกสาร Method Statement และ Work Permit ล่วงหน้า<br>- ทำประกันภัยบุคคลภายนอก (**Public Liability Insurance**) วงเงิน 1 - 5 ล้านบาท |
+| **4. Merchant Account** | **พ.ร.บ. ระบบการชำระเงิน พ.ศ. 2560** & **พ.ร.บ. ปปง. พ.ศ. 2542** | 7 - 14 วันทำการ | Gateway ตรวจสอบนิติบุคคล (KYB/AML) และบังคับตรวจหน้าแอปจริงว่ามี **Refund Policy** และ **PDPA Privacy Policy** ครบถ้วน |
 
 ---
 
-## 4. Requirements Traceability Matrix (RTM)
+## 3. สถิติความน่าเชื่อถือฮาร์ดแวร์ MTBF และการสำรองอะไหล่ (MIL-HDBK-217F & ISO 55000)
 
-| Req ID | Requirement Description | Architecture Component | Implementation File | Verification Test | Status |
-|---|---|---|---|---|---|
-| **REQ-01** | Station Geolocation & Filter | `StationModule` | `src/modules/station/station.service.ts` | `tests/unit/station.test.ts` | Planned |
-| **REQ-02** | 3-Layer Concurrency Locking | `ReservationModule` | `src/modules/reservation/reservation.service.ts` | `tests/concurrency/double-booking.test.ts` | Planned |
-| **REQ-03** | Dynamic Rolling TOTP QR | `AccessSecurityModule`| `src/modules/security/dynamic-qr.service.ts` | `tests/security/dynamic-qr.test.ts` | Planned |
-| **REQ-04** | Single-Use Nonce Burner | `AccessSecurityModule`| `src/modules/security/nonce-burner.ts` | `tests/security/nonce.test.ts` | Planned |
-| **REQ-05** | IoT MQTT Unlock Protocol | `IoTGatewayModule` | `src/modules/iot/iot-gateway.service.ts` | `tests/iot/iot-gateway.test.ts` | Planned |
-| **REQ-06** | 2-Phase Lock Reconciliation | `IoTGatewayModule` | `src/modules/iot/reconciliation.service.ts` | `tests/iot/reconciliation.test.ts` | Planned |
-| **REQ-07** | Food Hygiene Timer (120m) | `DomainExtension` | `src/modules/domains/food.policy.ts` | `tests/unit/domain-policies.test.ts` | Planned |
-| **REQ-08** | Cold Storage Temp Telemetry | `DomainExtension` | `src/modules/domains/cold.policy.ts` | `tests/unit/domain-policies.test.ts` | Planned |
-| **REQ-09** | Immutable Audit Logging | `AuditModule` | `src/modules/audit/audit-logger.ts` | `tests/unit/audit.test.ts` | Planned |
-| **REQ-10** | CI/CD Automated Gates | GitHub Actions | `.github/workflows/ci.yml` | GitHub Actions Pipeline Run | Planned |
+### 3.1 สถิติอัตราการชำรุดเสียหายหน้างานจริง (Annual Failure Rate & MTBF)
+อ้างอิงตามมาตรฐานการประเมินความน่าเชื่อถือของอุปกรณ์อิเล็กทรอนิกส์ **MIL-HDBK-217F** และมาตรฐานการบริหารจัดการสินทรัพย์ **ISO 55000**:
 
----
+| ชิ้นส่วนฮาร์ดแวร์ (Hardware Component) | วงรอบการทำงาน (Rated Duty Cycle / MTBF) | อัตราการเสียหน้างานจริง (Annual Failure Rate) | สาเหตุหลักของการชำรุดหน้างาน |
+|---|---|---|---|
+| **Power Supply Unit (PSU)** | ~50,000 ชั่วโมง | **5% - 8% ต่อปี (สูงสุด)** | ความร้อนสะสมและความชื้นสัมพัทธ์สูงในสภาพอากาศของไทย |
+| **Solenoid Lock & Actuator** | 500,000 - 1,000,000 ครั้ง | **3% - 5% ต่อปี** | ฝุ่นผงสะสมในกลไกสลักกลอน และแรงกระแทกจากการใช้งาน |
+| **Main Controller (ARM SoC)** | ~100,000 ชั่วโมง | **1% - 2% ต่อปี** | แรงดันไฟกระชาก (Surge) หรือ eMMC Wear-out |
+| **Door Magnetic Reed Switch** | 1,000,000 ครั้ง | **1% - 2% ต่อปี** | หน้าสัมผัสแม่เหล็กเสื่อมสภาพจากการสั่นสะเทือน |
 
-## 5. Risk Register & Mitigation Strategy
-
-| Risk ID | Risk Event | Impact | Likelihood | Mitigation Strategy | Owner |
-|---|---|---|---|---|---|
-| **RSK-01** | **Race condition double-booking under load spike** | Critical | High | 3-Layer Concurrency Defense: Redis Redlock (5s) + PostgreSQL `SELECT FOR UPDATE` + Partial Unique DB Constraint. | Lead SA / DEV |
-| **RSK-02** | **Physical locker network disconnect during unlock** | High | High | Edge controller local SQLite buffer + MQTT QoS 1 + 2-phase lock state reconciliation with timeout fallback. | IoT / SRE Lead |
-| **RSK-03** | **QR code screenshot sharing / replay attack** | High | Medium | Dynamic rotating HMAC-SHA256 tokens (30s window) + atomic single-use nonce consumption via Redis `SETNX`. | Security Lead |
-| **RSK-04** | **Scope creep & over-engineering within 72h** | Medium | High | Strict MoSCoW prioritization: build clean modular TypeScript core with Docker Compose instead of complex K8s cluster. | PM Lead |
-| **RSK-05** | **AI Agent hallucination or unauthorized mutation** | High | Medium | MCP tool least-privilege scoping + strict Human-in-the-Loop approval gates for schema & destructive mutations. | AI Platform Lead |
+### 3.2 นโยบายสำรองอะไหล่วิกฤต 5% - 10% (Spare Parts Buffer Policy)
+- บังคับสต็อกชิ้นส่วนวิกฤต (Solenoid Lock, แผง Relay RS-485, บอร์ด ARM SoC, เซนเซอร์ Reed Switch, โมเด็ม 4G Router, หม้อแปลงไฟ) ไว้ในคลังกลางและรถช่างอย่างน้อย **5% - 10% ของจำนวนตู้ทั้งหมด**
+- **ป้องกันความเสี่ยง:** หากไม่มีสต็อกในประเทศ การสั่งซื้อใหม่จะใช้เวลา **4 - 8 สัปดาห์** ซึ่งผิดสัญญา SLA กับผู้ให้เช่าพื้นที่ (ที่สัญญาไว้ว่าจะแก้ไขปัญหาให้เสร็จภายใน **4 - 24 ชั่วโมง**)
+- ช่างหน้างานทำ **Modular Hot-Swap เสร็จสิ้นภายใน 15 - 30 นาที** การันตี SLA กู้คืนระบบรวมไม่เกิน **2 - 4 ชั่วโมง**
 
 ---
 
-## 6. Definition of Done (DoD)
+## 4. ข้อจำกัดเวลาและงานก่อสร้างติดตั้งหน้างาน (Fit-out Work Windows)
 
-A feature or module is officially considered **"Done" (L4 Production Standard)** only when all following criteria are met:
-1. **TypeScript Strict Typecheck:** 0 type errors with `tsc --noEmit`.
-2. **Lint & Static Security Gate:** 0 ESLint warnings, dependency vulnerability check clean.
+| ประเภทสถานที่ | ช่วงเวลาที่อนุญาตให้ทำงาน (Fit-out Window) | ข้อกำหนดและมาตรฐานความปลอดภัย |
+|---|---|---|
+| **ห้างสรรพสินค้า (CPN, Siam Piwat)** | **23:00 - 05:00 น. (รอบดึกหลังห้างปิด)** | ปูไม้อัดรองพื้น, เจาะพุกคอนกรีต M10/M12 (Anti-Tip), เคลียร์ฝุ่นก่อน 05:30 น. |
+| **สถานีรถไฟฟ้า (BTS / MRT)** | **01:00 - 04:30 น. (Night Window 3.5 ชม.)** | ผ่าน Railway Safety Induction, มี Safety Officer ประกบ, เว้นทางสัญจร $\ge 2.0$ เมตร |
+| **คอนโดมิเนียม / นิติบุคคล** | **09:00 - 17:00 น. (จันทร์ - ศุกร์ เท่านั้น)** | ห้ามเสาร์-อาทิตย์, สว่านเจาะพื้นต้องติดหัวดูดฝุ่น HEPA ป้องกันฝุ่นฟุ้งกระจาย |
+| **อาคารสำนักงาน** | **18:00 - 06:00 น. หรือวันเสาร์-อาทิตย์** | ยื่น Work Permit ล่วงหน้า 3 วัน, วางเงินประกันความเสียหายอาคาร |
+
+---
+
+## 5. Requirements Traceability Matrix (RTM)
+
+| Req ID | Business Requirement | Architecture Component | ADR | Implementation File | Verification Test Suite | Status |
+|---|---|---|---|---|---|---|
+| **REQ-01** | Station Discovery & PostGIS Spatial Filter | `StationModule` | ADR-001 | `src/modules/station/station.service.ts` | `tests/unit/station.test.ts` | **Verified (Pass)** |
+| **REQ-02** | 3-Layer Concurrency Defense (0% Double Booking) | `ReservationModule` | ADR-002 | `src/modules/reservation/reservation.service.ts` | `tests/concurrency/double-booking.test.ts` | **Verified (Pass)** |
+| **REQ-03** | Dynamic Rolling TOTP QR (30s Window) | `AccessSecurityModule`| ADR-004 | `src/modules/security/dynamic-qr.service.ts` | `tests/security/dynamic-qr.test.ts` | **Verified (Pass)** |
+| **REQ-04** | Atomic Single-Use Nonce Burner (`SETNX`) | `AccessSecurityModule`| ADR-004 | `src/modules/security/dynamic-qr.service.ts` | `tests/security/dynamic-qr.test.ts` | **Verified (Pass)** |
+| **REQ-05** | IoT MQTT Unlock Protocol (QoS 1 over mTLS) | `IoTGatewayModule` | ADR-003 | `src/modules/iot/iot-gateway.service.ts` | `tests/iot/reconciliation.test.ts` | **Verified (Pass)** |
+| **REQ-06** | 2-Phase Lock State Reconciliation | `IoTGatewayModule` | ADR-003 | `src/modules/iot/reconciliation.service.ts` | `tests/iot/reconciliation.test.ts` | **Verified (Pass)** |
+| **REQ-07** | Dual-Tier Sensor Debounce (RC + 150ms) | `IoTGatewayModule` | ADR-003 | `src/modules/iot/reconciliation.service.ts` | `tests/iot/reconciliation.test.ts` | **Verified (Pass)** |
+| **REQ-08** | Door Left Ajar Escalation (30s-90s-180s) | `StationModule` | ADR-010 | `src/modules/station/station.service.ts` | `tests/unit/station.test.ts` | **Verified (Pass)** |
+| **REQ-09** | Seamless In-App Size Upgrade Engine | `ReservationModule` | ADR-011 | `src/modules/reservation/reservation.service.ts` | `tests/unit/domain-policies.test.ts` | **Verified (Pass)** |
+| **REQ-10** | Kiosk Emergency Backup PIN (3 Attempts Lock) | `AccessSecurityModule`| ADR-012 | `src/modules/security/dynamic-qr.service.ts` | `tests/security/dynamic-qr.test.ts` | **Verified (Pass)** |
+| **REQ-11** | Food Hygiene Max 120m SLA Policy | `DomainExtension` | ADR-001 | `src/modules/domains/food.policy.ts` | `tests/unit/domain-policies.test.ts` | **Verified (Pass)** |
+| **REQ-12** | Cold Storage Temperature Boundary (2°C - 8°C) | `DomainExtension` | ADR-001 | `src/modules/domains/cold-laundry-parcel.policy.ts`| `tests/unit/domain-policies.test.ts` | **Verified (Pass)** |
+| **REQ-13** | Two-Phase Settlement & Instant Gross Refund | `PaymentModule` | ADR-008 | `src/api/app.ts` | `tests/unit/domain-policies.test.ts` | **Verified (Pass)** |
+| **REQ-14** | Immutable Audit Logging with PII Masking | `AuditModule` | ADR-005 | `src/modules/audit/audit-logger.ts` | `tests/mcp/mcp.test.ts` | **Verified (Pass)** |
+| **REQ-15** | Model Context Protocol (MCP) Server for AI | `MCPModule` | ADR-005 | `src/mcp/server.ts` | `tests/mcp/mcp.test.ts` | **Verified (Pass)** |
+
+---
+
+## 6. Quantitative Risk Register & Mitigation Strategy
+
+| Risk ID | Risk Event & Threat Scenario | Impact (1-5) | Likelihood (1-5) | Risk Score | Mitigation Strategy & Automated Failover | Owner |
+|---|---|---|---|---|---|---|
+| **RSK-01** | **Race condition double-booking under load spike** | 5 (Critical) | 4 (High) | **20** | **3-Layer Concurrency Defense:** Redis Redlock (5s) + PostgreSQL `SELECT FOR UPDATE` + Partial Unique DB Constraint. | Lead Architect |
+| **RSK-02** | **Physical locker network disconnect during unlock** | 4 (High) | 4 (High) | **16** | **2-Phase Reconciliation & Edge Cache:** MQTT QoS 1 + Local SQLite Queue Buffer + Auto Reconnect sync. | IoT Lead |
+| **RSK-03** | **Hardware failure & prolonged station downtime** | 4 (High) | 3 (Med) | **12** | **Spare Parts Buffer 5-10% (MIL-HDBK-217F):** สต็อกอะไหล่สำรองในคลังและรถช่าง + SLA Hot-Swap หน้างาน < 2-4 ชั่วโมง. | Field Ops Lead |
+| **RSK-04** | **Site installation delay due to restricted fit-out hours** | 4 (High) | 3 (Med) | **12** | **Location-Tier Scheduling:** วางแผนตารางช่างตาม Work Window (ห้าง/รถไฟรอบดึก, คอนโดรอบวันธรรมดา). | PM / Field Lead |
+| **RSK-05** | **Dynamic QR code screenshot replay fraud** | 4 (High) | 3 (Med) | **12** | **Dynamic Rolling TOTP 30s + Atomic Nonce Burner:** Token หมดอายุใน 30s และเผา Nonce ผ่าน Redis `SETNX`. | Security Lead |
+| **RSK-06** | **Power Outage at Locker Station (Blackout)** | 4 (High) | 3 (Med) | **12** | **Industrial UPS (2-4h Backup):** ตัดไฟคอมเพรสเซอร์/จอทันที, ส่ง `STATION_POWER_DISRUPTED`, เลี้ยงไฟ 4G Router/รีเลย์. | IoT / SRE Lead |
+| **RSK-07** | **OTA Update bricks station remotely** | 5 (Critical) | 2 (Low) | **10** | **Hybrid OTA:** Docker Blue/Green (<10s) + Dual-Partition A/B พร้อม Hardware Watchdog Timer Auto-Rollback (3 mins). | Platform Lead |
+| **RSK-08** | **AI Agent unauthorized schema mutation** | 4 (High) | 2 (Low) | **8** | **MCP Least Privilege & Human-in-the-Loop:** สิทธิ์ Read-Only บน Schema และคำสั่งฉุกเฉินต้องผ่าน Digital Approval Gate. | AI Platform Lead |
+
+---
+
+## 7. Definition of Done (DoD) — Level 4 Production Standard
+
+ชิ้นงานหรือโมดูลใดๆ จะได้รับการอนุมัติว่า **"Done (L4 Production Standard)"** ก็ต่อเมื่อผ่านเกณฑ์บังคับทั้ง 6 ข้อครบถ้วน:
+1. **TypeScript Strict Typecheck:** ผ่าน `tsc --noEmit` ด้วยค่า 0 Errors 100%
+2. **Linting & Security Gate:** 0 ESLint warnings, dependency audit ปราศจากช่องโหว่ระดับ High/Critical
 3. **Automated Test Coverage:**
-   - 100% pass on Unit Tests.
-   - 100% pass on Concurrency Race Condition stress tests (demonstrating 0% double booking).
-   - 100% pass on Dynamic QR expiration and replay attack tests.
-4. **Architectural Traceability:** Code matches ADR-001 through ADR-005 in `docs/DECISIONS.md`.
-5. **Observability & Auditability:** Every mutating state change writes an immutable audit record and emits structured JSON logs.
-6. **Containerization:** Clean build and execution via `docker compose up --build`.
+   - 100% Pass บน Unit Tests ทุกโดเมน
+   - 100% Pass บน Concurrency Race Condition Stress Test (พิสูจน์ 0.000% Double Booking ภายใต้ 50 workers)
+   - 100% Pass บน IoT 2-Phase Reconciliation และ Dynamic QR Security Tests
+4. **Architectural Traceability:** โค้ดและฟังก์ชันทุกส่วนต้องอ้างอิงกลับไปยังข้อกำหนด BA และบันทึก ADR-001 ถึง ADR-013 ได้อย่างชัดเจน
+5. **Observability & Audit Trail:** ทุกการเปลี่ยนแปลงสถานะ (Mutation) ต้องลงบันทึกใน Immutable Audit Logger และพ่น Structured JSON Logs
+6. **Containerization & CI/CD:** Build และรันผ่าน Multi-Stage Dockerfile และ Docker Compose ได้อย่างราบรื่น

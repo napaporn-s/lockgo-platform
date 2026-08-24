@@ -26,7 +26,7 @@ jobs:
       - name: TypeScript Static Gate (0 Errors)
         run: bun run typecheck
 
-      - name: Run Automated Test Suite (23 Tests: Concurrency, Security, IoT, Policies)
+      - name: Run Automated Test Suite (28 Tests: Concurrency, Security, IoT, Policies, Operational)
         run: bun test
 
       - name: Build Docker Container

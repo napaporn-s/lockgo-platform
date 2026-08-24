@@ -1,136 +1,91 @@
-# LOCKGO — Business Scenario & Requirements Analysis (BA Phase)
+# LOCKGO — Business Scenario, Legal Compliance & Requirements Specification (BA Phase)
 
-> **Role:** Business Analyst & Requirements Lead  
+> **Role:** Lead Business Analyst & Enterprise Architecture Partner  
 > **Platform:** LOCKGO — Next-Gen Smart Locker Platform  
 > **Author:** Napaporn Suttinarksombat (Koy) & Elena (Technical Assistant)  
-> **Version:** 1.0.0 (Production Blueprint)
+> **Version:** 1.3.0 (Comprehensive Enterprise Business Specification with Operational Edge Policies)
 
 ---
 
-## 1. Executive Business Overview
+## 1. Executive Business Overview & Problem Statement
 
-LOCKGO is an enterprise-grade, high-reliability **Smart Locker Platform** engineered to solve last-mile logistics bottlenecks, secure physical asset storage, and touchless custody handoffs across high-density urban environments (condominiums, transit hubs, commercial offices, universities, and retail centers).
+LOCKGO เป็นแพลตฟอร์ม Smart Locker อัจฉริยะสำหรับแก้ปัญหา Last-Mile Logistics (ซึ่งคิดเป็น 53% ของต้นทุนขนส่งทั้งหมด), บริการรับฝากของปลอดภัยแบบไร้สัมผัส, จุดรับ-ส่งอาหารพร้อมทาน, บริการตู้แช่เย็นสำหรับสินค้าควบคุมอุณหภูมิ และจุดบริการรับส่งผ้าซักอบรีด 24 ชั่วโมง
 
 ```mermaid
 graph TD
-    User([End User / Customer App]) -->|Book / Pay / Pickup / Dropoff| Platform[LOCKGO Core Platform]
-    Staff([Admin / Field Technician]) -->|Manage / Maintain / Audit| Platform
-    Courier([Logistics / Courier Partner]) -->|Batch Dropoff / Handoff| Platform
-    Merchant([Merchants / Laundry / Food]) -->|Fulfillment / Return| Platform
-    Platform -->|MQTT v5 over mTLS| EdgeController[Smart Locker Hardware Stations]
-    Platform -->|Webhooks / SDK| PaymentGW[Payment Gateways - PromptPay/Cards]
-    Platform -->|FCM / SMS / LINE| NotificationSvc[Notification Services]
+    User([End User / Customer]) -->|Book / Pay / Pickup / Dropoff| Platform[LOCKGO Core Platform]
+    Courier([B2B Courier / Driver]) -->|OAuth 2.0 API / Driver App| Platform
+    Partner([Merchant Partners - Laundry/Food]) -->|Rev Share / Webhook| Platform
+    Ops([Field Operations / Technicians]) -->|Force Unlock / Disposal Audit| Platform
+    Platform -->|MQTT v5 over mTLS| EdgeController[Smart Locker Stations]
+    Platform -->|PromptPay / Credit Card| PaymentGW[Payment Gateways]
+    Platform -->|Batch Settlement 02:00| FinancialLedger[Double-Entry Financial Ledger]
 ```
 
 ---
 
-## 2. Stakeholder Personas & Core User Stories
+## 2. Legal & Regulatory Compliance Framework
 
-### 2.1 End-User / Customer (Mobile App - iOS / Android)
-- **US-01 (Station Discovery):** As a user, I want to search and filter locker stations by geolocation, walking distance, compartment sizes (S, M, L, XL), operating hours, and specialized features (e.g. cold storage) so that I can find a suitable station quickly.
-- **US-02 (Slot Reservation):** As a user, I want to reserve a locker compartment with a guaranteed hold window (15 minutes) before arriving at the station so that my slot is not taken by someone else.
-- **US-03 (Dynamic Contactless Access):** As a user, I want to open my locker compartment by scanning a dynamic rolling QR code (TOTP/HMAC) or using Bluetooth proximity so that unauthorized parties cannot access my locker via static screenshots.
-- **US-04 (Flexible Handoff):** As a user, I want to deposit a package for another person (peer-to-peer or courier pickup) by specifying the recipient's phone number or secure claim token.
-- **US-05 (Transparent Billing):** As a user, I want to see clear upfront pricing (base rate + hourly overtime) and pay seamlessly via PromptPay QR, Credit Card, or Mobile Banking.
-
-### 2.2 Field Technicians & Station Operators (Web Backoffice & Mobile Ops)
-- **US-06 (Station Telemetry & Monitoring):** As an operator, I want real-time visibility into all station controllers, door sensors (optical/magnetic), compartment locks (solenoid/relay state), ambient temperature, and network connectivity.
-- **US-07 (Maintenance Isolation):** As a technician, I want to toggle any compartment into `MAINTENANCE` or `OUT_OF_SERVICE` state so that damaged or jammed doors are instantly removed from the public reservation pool.
-- **US-08 (Emergency Override Unlock):** As an authorized supervisor, I want to trigger a dual-authenticated emergency remote unlock with mandatory audit logging and photo proof.
-
-### 2.3 Business Merchants & Logistics Partners (B2B API Integration)
-- **US-09 (Batch Dropoff):** As a courier, I want to authenticate at a locker station and deposit multiple packages into distinct compartments in a single continuous session.
-- **US-10 (Proof of Delivery Webhook):** As an e-commerce partner, I want to receive real-time webhook events (`DELIVERED`, `PICKED_UP`, `RETURNED_EXPIRED`) with photographic or sensor verification.
+| กฎหมาย / ข้อบังคับ | ขอบเขตการกำกับดูแล | สถาปัตยกรรมและกลไกของระบบ (System Mechanism) |
+|---|---|---|
+| **1. พ.ร.บ. คุ้มครองผู้บริโภค & พ.ร.บ. ขายตรงและตลาดแบบตรง** | การคุ้มครองสิทธิผู้บริโภคในการซื้อบริการออนไลน์ และสิทธิการได้รับเงินคืนเต็มจำนวนเมื่อระบบขัดข้อง | - **System Error / ตู้ไม่เปิด / ขนาดช่องไม่พอดีและไม่มีช่องใหญ่ว่าง:** คืนเงิน Gross Refund 100% ทันที (บริษัทรับภาระ MDR)<br>- **User Cancellation:** คืนเงิน Net Refund (หักค่าธรรมเนียม PG 5-10 บาท) หรือคืนเป็น 100% In-App Wallet Credit |
+| **2. พ.ร.บ. ระบบการชำระเงิน พ.ศ. 2560 (ธปท.)** | ความปลอดภัยของ e-Payment, PromptPay และรอบการกระทบยอดเงิน | - บังคับใช้ `Idempotency-Key` (UUID) ทุก API Call ตัดเงิน<br>- ระบบ **Daily Reconciliation Engine** รัน Batch Job ทุก 02:00 น. เทียบไฟล์ Settlement จาก Payment Gateway กับ Order Logs |
+| **3. พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)** | การจัดเก็บเบอร์โทรศัพท์, ข้อมูลการจ่ายเงิน, และภาพถ่ายหน้าตู้ | - **PII Masking** ใน Audit Log (เช่น `081-****-1234`)<br>- ลบภาพถ่ายสแกนเนอร์/CCTV ที่ไม่เกี่ยวข้องทิ้งทุก 30 วัน (Data Retention Policy) |
+| **4. พ.ร.บ. ป้องกันและปราบปรามการฟอกเงิน (AMLO) & วัตถุอันตราย** | การตรวจสอบตัวตนผู้ใช้บริการในพื้นที่เสี่ยงหรือธุรกรรมผิดปกติ | - **KYC Level 1 (ทั่วไป):** OTP เบอร์มือถือ + Device ID Fingerprint<br>- **KYC Level 2 (พื้นที่เสี่ยง/สนามบิน/ฝากเกิน 24h):** สแกนบัตรประชาชน (Dip-Chip/OCR) หรือ Passport |
+| **5. ป.พ.พ. เรื่องการฝากทรัพย์และรับขน** | การกำหนดเพดานความรับผิดชอบและการประกันภัยทรัพย์สิน | - **Standard Plan:** ชดเชยสูงสุดไม่เกิน 2,000 บาท/รายการ<br>- **Declared Value Insurance:** ซื้อประกันเพิ่ม 10-20 บาท สำหรับของมูลค่าเกิน 2,000 บาท คุ้มครองสูงสุด 20,000 บาท |
+| **6. พ.ร.บ. อาหาร พ.ศ. 2522 & สาธารณสุข** | การควบคุมสุขอนามัยอาหารพร้อมบริโภคและห่วงโซ่ความเย็น | - แจ้งเตือนเมื่อเกิน 3 ชั่วโมง และเปลี่ยนสถานะเป็น `DISPOSAL_PENDING` เพื่อทำลายทิ้งทันทีเมื่อครบ 6 ชั่วโมง<br>- ตู้แช่เย็นต้องคุมอุณหภูมิ 2°C - 8°C ตลอดเวลา |
 
 ---
 
-## 3. Business Rules Matrix & Validation Engine
+## 3. Operational Edge Policies & Business Workflows
 
-| Rule ID | Business Domain | Rule Description | Enforcement Layer | Failure Action |
-|---|---|---|---|---|
-| **BR-001** | Reservation Hold | Maximum reservation hold time is 15 minutes before physical dropoff/arrival. | Redis TTL + Cron Reconciler | Auto-cancel reservation, release compartment to `AVAILABLE`, notify user. |
-| **BR-002** | Concurrency Guard | No compartment may have more than one active reservation or occupied session at any millisecond. | Redis Redlock + PostgreSQL `SELECT FOR UPDATE` | Return HTTP 409 Conflict with alternative available slots at same station. |
-| **BR-003** | Dynamic QR Expiry | Access QR code must rotate every 30 seconds with a +/- 1 time-step clock drift allowance. | Cryptographic TOTP/HMAC Engine | Reject scan, prompt mobile app to refresh screen. |
-| **BR-004** | Single-Use Nonce | Once a QR access token is successfully verified at a station, its cryptographic nonce is immediately burned. | Atomic Redis `SETNX` (Key: `nonce:{id}`, TTL 10m) | Reject replay attack, log security alert in Audit Trail. |
-| **BR-005** | Door Open Timeout | Compartment door open duration cannot exceed 3 minutes during deposit/pickup. | Edge Hardware Timer + Server MQTT Alert | Edge beeper sound + Push notification + Flag station warning event. |
-| **BR-006** | Food Locker Hygiene | Food pickup compartments have a strict 2-hour maximum storage SLA. | Domain Extension Policy | If unclaimed at T+120m, notify user/courier and initiate disposal protocol. |
-| **BR-007** | Cold Storage Temp SLA | Cold compartments must maintain 2°C – 8°C. If temperature exceeds 10°C for > 15 mins, flag alert. | IoT Telemetry Ingestion Worker | Halt new cold bookings, alert technician, dispatch SMS warning to current depositors. |
-| **BR-008** | Overtime Billing | Overtime parking past booked duration incurs automatic tiered penalty fees per 30-minute block. | Billing Calculation Engine | Charge on pickup before door release command is dispatched. |
+### 3.1 นโยบายเมื่อผู้ใช้ "ลืมปิดประตูตู้" (Door Left Ajar Policy)
+- **Escalation Sequence:**
+  - **0 - 30 วินาที:** ระบบรออย่างเงียบๆ (Normal Operation)
+  - **30 วินาที:** ตู้เริ่มส่งเสียงเตือน Buzzer จังหวะช้าหน้าตู้ พร้อมยิง Push Notification เข้ามือถือผู้ใช้ (*"กรุณาปิดประตูตู้ Locker หมายเลข X"*)
+  - **90 วินาที:** Buzzer เปลี่ยนเป็นเสียงเตือนความถี่สูง (High-Pitch Alarm) พร้อมส่ง SMS เตือนด่วน
+  - **180 วินาที (3 นาที):** Edge Daemon เปลี่ยนสถานะช่องเป็น `DOOR_AJAR_ALERT`
+- **Security & Financial Control:**
+  - **ห้ามตัดจบเป็น `COMPLETED` เด็ดขาด** เพื่อป้องกันปัญหาสินค้าสูญหายหรือคนอื่นมาแอบหยิบของ
+  - ระบบเปลี่ยนสถานะ Transaction เป็น `PENDING_INVESTIGATION`
+  - Trigger Alarm Event ไปที่ Central Operations Dashboard พร้อมดึงภาพกล้อง CCTV เพื่อให้ทีม Ops โทรหาผู้ใช้ทันที หรือส่งเจ้าหน้าที่ Field Ops เข้าปิดตู้
 
----
+### 3.2 กรณี "พัสดุชิ้นใหญ่เกินขนาดช่องที่จอง" (Seamless Size Upgrade Workflow)
+- ในขณะที่สถานะเป็น `DEPOSITING` (ยังไม่ได้ปิดประตูกดส่งของ) หน้าตู้และแอปจะแสดงปุ่ม **"เปลี่ยนขนาดช่อง / Change Locker Size"**
+- **Upgrade Execution:**
+  - ระบบตรวจสอบความพร้อมของช่องไซส์ใหญ่ขึ้น (เช่น L หรือ XL) ในสถานีเดียวกัน
+  - **กรณีมีช่องว่าง:** ระบบส่งคำสั่ง `CANCEL_LOCK` ช่องเดิมคืนเป็น `AVAILABLE` -> สร้าง Sub-Order คำนวณส่วนต่างราคา -> ลูกค้าชำระเงินส่วนต่างผ่าน In-App Payment -> ปลดล็อกช่องใหม่ทันที
+  - **กรณีไม่มีช่องว่าง:** แสดงข้อความแจ้งเตือน และแสดงปุ่ม *"ยกเลิกรายการและคืนเงินเต็มจำนวน (Auto Full Refund 100%)"*
 
-## 4. Multi-Domain Business Expansion (Modular Extensibility)
+### 3.3 กรณี "โทรศัพท์ผู้ใช้แบตเตอรี่หมดหน้าตู้" (Emergency Backup PIN)
+- **SMS Backup PIN:** เมื่อทำการจองสำเร็จ ระบบจะส่งรหัสฉุกเฉิน **Backup PIN (ตัวเลข 6 หลัก)** แนบไปทาง SMS ของเบอร์โทรศัพท์ผู้ใช้เสมอ
+- **Kiosk Emergency Unlock:** ผู้ใช้สามารถกดปุ่ม *"Emergency Unlock"* ที่หน้าจอ Touchscreen Kiosk -> กรอกเบอร์โทรศัพท์ + Backup PIN 6 หลัก
+- **Brute-Force Guardrail:**
+  - PIN มีอายุตาม Session การจองเท่านั้น
+  - หากกรอก PIN ผิดติดต่อกัน **เกิน 3 ครั้ง** ระบบจะ Lock หน้าจอเมนู Emergency ของเบอร์นั้นเป็นเวลา 15 นาที พร้อมยิง Security Alert ขึ้นระบบ Monitoring ทันที
 
-LockGo is architected as an **Extensible Urban Logistics & Storage Platform** capable of supporting diverse business verticals on a single shared hardware infrastructure:
+### 3.4 โครงสร้างต้นทุน ค่าธรรมเนียม และการคืนเงิน (MDR & Settlement)
+1. **PromptPay (QR Payment):** ค่าธรรมเนียม 0.15% - 0.5% (บริษัทออกค่าใช้จ่ายเองเพื่อลด Friction)
+2. **Credit/Debit Card:** MDR 1.5% - 2.5% (บริษัทออกค่าใช้จ่ายเอง โดยถัวเฉลี่ยใน Margin ของราคาบริการแล้ว)
+3. **Settlement Cycle (T+1):** กระทบยอดเงินทุกวันเวลา 02:00 น. ผ่าน Automated Reconciliation Engine
 
-```mermaid
-classDiagram
-    class CoreLockerPlatform {
-        <<Core>>
-        +StationRegistry
-        +CompartmentAllocator
-        +HardwareGateway
-        +SecurityTokenService
-        +BillingEngine
-        +AuditLogger
-    }
-
-    class ParcelDomain {
-        +CourierTrackingValidation
-        +ProofOfDeliveryWebhook
-        +ReturnToSenderWorkflow
-    }
-
-    class FoodPickupDomain {
-        +MaxStorageTimer (120 min)
-        +ThermalSanitationAlert
-        +RiderBatchDeposit
-    }
-
-    class LaundryDomain {
-        +DryCleaningPartnerSync
-        +BagBarcodeScanner
-        +MultiDayBillingTier
-    }
-
-    class ColdStorageDomain {
-        +ContinuousTemperatureCheck
-        +PowerOutageFailover
-        +PerishableExpiryAlert
-    }
-
-    class DocumentLockerDomain {
-        +DualFactorBiometricUnlock
-        +LegalChainOfCustodyLog
-        +TamperEvidentSensor
-    }
-
-    CoreLockerPlatform <|-- ParcelDomain
-    CoreLockerPlatform <|-- FoodPickupDomain
-    CoreLockerPlatform <|-- LaundryDomain
-    CoreLockerPlatform <|-- ColdStorageDomain
-    CoreLockerPlatform <|-- DocumentLockerDomain
-```
-
-### Architectural Strategy for Zero-Rewrite Domain Expansion
-1. **Ports & Adapters / Strategy Pattern:**
-   - Core handles hardware abstraction, door locking, transaction boundaries, and telemetry.
-   - Domain-specific logic is injected via standardized interfaces:
-     - `IReservationPolicy` (e.g. `FoodReservationPolicy` enforces max 2-hour hold).
-     - `IBillingPolicy` (e.g. `LaundryBillingPolicy` applies daily rate vs hourly rate).
-     - `IAccessValidator` (e.g. `DocumentAccessValidator` requires 2FA confirmation).
-2. **Dynamic Metadata JSONB Schema:**
-   - Each reservation and compartment carries flexible domain attributes (`metadata: { temperature_target: 4.0, tracking_number: "TH12345", partner_id: "GRUB_01" }`) without requiring schema migrations for every new business vertical.
+### 3.5 กระบวนการจัดการของตกค้างและของเสีย (Abandoned & Disposal Policy)
+- **พัสดุทั่วไป (Parcel / General):** ครบ 48 ชม. -> คิดค่าบริการล่วงเวลา (Overtime Charge) -> ครบ 7 วัน -> `ABANDONED` -> Field Ops นำเข้าคลังกลาง (Central Hub)
+- **อาหารสด (Food / Perishable):** เกิน 3 ชม. -> Alert -> เกิน 6 ชม. -> `DISPOSAL_PENDING` -> ทำลายทิ้งทันที
+- **Field Ops Proof of Work:** บังคับสิทธิ์ `ROLE_FIELD_OPS` ถ่ายรูปสิ่งของอัปโหลดขึ้น S3 ก่อนกดยืนยันปิดงาน (`CLEARED`)
 
 ---
 
-## 5. Non-Functional Requirements (NFRs) & Platform Quality Attributes
+## 4. Stakeholder Personas & Core User Stories
 
-| NFR Category | Metric / Target | Architectural Mechanism | Verification Method |
-|---|---|---|---|
-| **P99 Latency** | < 100ms for reservation & station availability | Redis read-through caching, PostGIS spatial indexing, connection pooling | K6 load test with 500 concurrent virtual users |
-| **Availability** | 99.95% uptime SLA (< 4.38h downtime/year) | Multi-AZ deployment, stateless containers, offline edge station fallback | Chaos engineering / Edge disconnection simulation |
-| **Data Consistency** | 0% Double Booking under peak race conditions | Redis Redlock + PostgreSQL `SELECT ... FOR UPDATE` + Unique Constraints | Automated concurrency stress test (50 parallel requests for 1 slot) |
-| **Security & Privacy** | Zero static credentials, ISO/IEC 27001 readiness | Rolling TOTP/HMAC QR codes, AES-256 token encryption, TLS 1.3, PDPA PII masking | Automated OWASP / Replay attack test suite |
-| **IoT Resilience** | Zero command drop during intermittent 4G network | MQTT QoS 1 (At Least Once) + Edge local SQLite queue + 2-Phase reconciliation | Network latency / packet loss chaos simulation |
-| **Auditability** | 100% immutable mutation trace | Append-only PostgreSQL `audit_logs` + structured JSON stdout stream | E2E audit trace verification for all mutating endpoints |
+### 4.1 End-User / Customer (Mobile App & Kiosk)
+- **US-01 (Discovery & Operating Hours):** ค้นหาตู้พร้อมแสดงเวลาเปิด-ปิดของสถานที่ และสถานะช่องว่างแบบเรียลไทม์
+- **US-02 (Item Category & Declared Value):** เลือกประเภทสิ่งของ และระบุมูลค่าโดยประมาณ พร้อมตัวเลือกซื้อประกันภัยคุ้มครองสูงสุด 20,000 บาท
+- **US-03 (Payment & Dynamic QR):** ชำระเงินผ่าน PromptPay/บัตรเครดิต และรับ Dynamic Rolling QR Code หมุนเปลี่ยนทุก 30 วินาที
+- **US-04 (Emergency PIN Fallback):** ปลดล็อกตู้ด้วย Backup PIN 6 หลักผ่านหน้าจอ Kiosk เมื่อแบตเตอรี่โทรศัพท์หมด
+- **US-05 (Seamless Size Upgrade):** ขอย้ายไปช่องขนาดใหญ่ขึ้นพร้อมจ่ายเงินส่วนต่างได้ทันทีขณะอยู่หน้าตู้
+
+### 4.2 B2B Courier & Field Operations Staff
+- **US-06 (Batch Driver Dropoff):** คนขับขนส่งสแกน Barcode พัสดุหลายชิ้นและเปิดตู้ต่อเนื่องได้ในรอบเดียว
+- **US-07 (Disposal & Abandoned Clearance):** สั่ง Force Unlock เพื่อเก็บพัสดุตกค้าง (>7 วัน) หรือทำลายอาหารเน่าเสีย (>6 ชม.) พร้อมถ่ายรูปอัปโหลด S3
+- **US-08 (Door Ajar Investigation):** รับแจ้งเตือนประตูตู้เปิดค้างเกิน 3 นาทีพร้อมดูภาพ CCTV เพื่อเข้าแก้ไข

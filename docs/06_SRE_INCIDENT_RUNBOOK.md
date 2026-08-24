@@ -3,7 +3,7 @@
 > **Role:** Site Reliability Engineer (SRE) & Platform Lead  
 > **Platform:** LOCKGO — Next-Gen Smart Locker Platform  
 > **Author:** Napaporn Suttinarksombat (Koy) & Elena (Technical Assistant)  
-> **Version:** 1.0.0 (Production SRE Runbooks)
+> **Version:** 1.2.0 (Production SRE Runbooks with Hot-Swap & Door Ajar Playbooks)
 
 ---
 
@@ -13,7 +13,7 @@
 |---|---|---|---|---|
 | **P0 (Critical)** | Core API outage, station fleet unable to unlock, widespread double-booking | < 5 minutes | < 30 minutes | Incident Commander -> Lead SA -> VP Eng |
 | **P1 (High)** | Single high-traffic station offline (> 20 compartments), payment gateway failing | < 15 minutes | < 2 hours | Primary SRE on-call -> Domain Lead |
-| **P2 (Medium)** | Single compartment jammed/sensor failure, Cold Locker temp threshold warning | < 30 minutes | < 6 hours | Field Operations / Hardware Technician |
+| **P2 (Medium)** | Single compartment jammed/sensor failure, Cold Locker temp threshold warning, Door Ajar | < 30 minutes | < 4 hours | Field Operations / Hardware Technician |
 | **P3 (Low)** | Non-critical UI glitch, telemetry logging delay, minor reporting discrepancy | < 2 hours | < 24 hours | Product Backlog / Next Sprint |
 
 ---
@@ -31,16 +31,15 @@
   2. If modem is frozen: trigger remote hardware power-cycle via smart PDU.
   3. Dispatch field technician if station does not reconnect within 30 minutes.
 
-### Playbook 2: Compartment Door Jammed / Sensor Signal Missing (P2)
-- **Symptom:** Unlock command dispatched; solenoid relay pulsed, but optical door sensor remains `CLOSED` or fails to register `OPENED` within 5 seconds.
+### Playbook 2: Compartment Door Jammed / Solenoid Failure (P2)
+- **Symptom:** Unlock command dispatched; solenoid relay pulsed, but sensor remains `CLOSED` after retry.
 - **Automated Platform Action:**
-  1. Retry relay pulse with higher duration (400ms pulse).
-  2. If still unverified: mark compartment as `PENDING_MAINTENANCE`.
-  3. Automatically allocate an adjacent available compartment of equal or larger size to the active user.
-- **Manual Remediation Steps:**
-  1. Inspect physical door alignment and optical sensor debris.
-  2. Perform manual solenoid test from Ops Backoffice.
-  3. Clear maintenance flag once verified.
+  1. Emit `HARDWARE_JAMMED` event -> Trigger 100% Instant Gross Refund to user.
+  2. Mark compartment as `PENDING_MAINTENANCE` and allocate adjacent slot if available.
+- **Field Ops Remediation (Hot-Swap):**
+  1. Field technician arrives with spare solenoid from the **5-10% Spare Parts Buffer**.
+  2. Performs **Modular Hot-Swap** (< 20 mins) replacing solenoid and reed switch assembly.
+  3. Verifies unlock pulse via Backoffice Diagnostic Tool and clears maintenance flag.
 
 ### Playbook 3: Concurrency Deadlock / Redis Cluster Node Failure (P0)
 - **Symptom:** Redis Redlock timeouts exceed 500ms; reservation latency spikes.
@@ -53,12 +52,33 @@
   3. Scale up read replicas if load persists.
 
 ### Playbook 4: Cold Storage Temperature Excursion (P1)
-- **Symptom:** Cold compartment temperature rises above 10°C for > 15 minutes.
+- **Symptom:** Cold compartment temperature rises above 8.0°C for > 5 minutes (10 polling cycles).
 - **Automated Platform Action:**
-  1. Ingestion worker emits `COLD_TEMPERATURE_EXCURSION_ALERT`.
+  1. Ingestion worker emits `COLD_TEMPERATURE_EXCURSION`.
   2. Immediately halt all new cold storage bookings at that station.
-  3. Dispatch automated SMS / WhatsApp push notification to all users with active perishable items in the affected unit.
+  3. Dispatch automated SMS / Push notification to users with active perishable items in the affected unit.
 - **Manual Remediation Steps:**
-  1. Check station refrigeration compressor power line.
-  2. Verify thermal insulation door seal.
-  3. If cooling failure is permanent, initiate emergency return/courier dispatch.
+  1. Check station refrigeration compressor power line and insulation seal.
+  2. If cooling failure is permanent, initiate emergency return/courier dispatch.
+
+### Playbook 5: Door Left Ajar Escalation & Investigation (P2)
+- **Symptom:** Door reed switch remains `OPEN` for > 180 seconds (3 minutes).
+- **Automated Platform Action:**
+  1. 30s: Trigger slow buzzer + Push notification to user.
+  2. 90s: Trigger high-pitch alarm + SMS warning.
+  3. 180s: State transitions to `DOOR_AJAR_ALERT` and transaction marked as `PENDING_INVESTIGATION`.
+- **Manual Remediation Steps:**
+  1. Central Ops inspects real-time CCTV stream of the station.
+  2. Ops agent makes immediate phone call to user to verify status.
+  3. If user is unreachable, dispatch nearest Field Ops to physically inspect and close locker door.
+
+### Playbook 6: Power Outage / Battery Backup Mode (P1)
+- **Symptom:** UPS sends `AC_POWER_LOSS`; Edge transitions to `Emergency Power Saving` and emits `STATION_POWER_DISRUPTED`.
+- **Automated Platform Action:**
+  1. Instant load-shedding: shut down digital display and cold compressor.
+  2. Freeze new bookings; broadcast SMS to active depositors to pick up within 2-3 hours.
+  3. Keep 4G router and relay board active on LiFePO4 battery for 2-4 hours.
+- **Manual Remediation Steps:**
+  1. Monitor battery discharge telemetry in SRE Dashboard.
+  2. Contact building facility management regarding AC power restoration schedule.
+  3. If battery hits < 10%, verify safe automated OS shutdown occurred without data corruption.

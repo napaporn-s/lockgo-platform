@@ -2,7 +2,7 @@
  * LOCKGO — 3-Layer Concurrency Reservation Engine (Zero Double-Booking Guarantee)
  */
 
-import { Reservation, AccessToken, DomainVertical } from '../../core/types';
+import { Reservation, AccessToken, DomainVertical, CompartmentSize } from '../../core/types';
 import { db } from '../../core/database';
 import { redis } from '../../core/redis';
 import { config } from '../../core/config';
@@ -105,6 +105,66 @@ export class ReservationService {
       // Release Layer 1 Redis distributed lock
       await redis.releaseLock(lockResource, lockValue);
     }
+  }
+
+  /**
+   * Seamless In-App Compartment Size Upgrade (ADR-011)
+   */
+  public async upgradeCompartmentSize(
+    reservationId: string,
+    targetSizeTier: CompartmentSize
+  ): Promise<{ reservation: Reservation; newCompartmentId: string; priceDifference: number }> {
+    const reservation = db.getReservation(reservationId);
+    if (!reservation) {
+      throw new LockGoError('Reservation not found', 'RESERVATION_NOT_FOUND', 404);
+    }
+
+    // Find available compartment of target size tier in same station
+    const available = db.getCompartmentsByStation(reservation.stationId).find(
+      c => c.status === 'AVAILABLE' && c.sizeTier === targetSizeTier
+    );
+
+    if (!available) {
+      throw new CompartmentNotAvailableError(`No available ${targetSizeTier} compartments at station ${reservation.stationId}`);
+    }
+
+    // Release old compartment
+    const oldComp = db.getCompartment(reservation.compartmentId);
+    if (oldComp) {
+      db.updateCompartment({ ...oldComp, status: 'AVAILABLE' });
+    }
+
+    // Claim new compartment
+    db.updateCompartment({ ...available, status: 'RESERVED' });
+
+    // Calculate price difference
+    const sizeMultiplier: Record<CompartmentSize, number> = { S: 1.0, M: 1.5, L: 2.0, XL: 3.0 };
+    const oldMultiplier = oldComp ? sizeMultiplier[oldComp.sizeTier] : 1.0;
+    const newMultiplier = sizeMultiplier[targetSizeTier];
+    const baseRate = 30; // 30 THB base
+    const priceDifference = Math.max(0, (newMultiplier - oldMultiplier) * baseRate);
+
+    // Update reservation
+    const updated: Reservation = {
+      ...reservation,
+      compartmentId: available.id,
+      updatedAt: Date.now(),
+    };
+    db.updateReservation(updated);
+
+    auditLogger.log('RESERVATION_SIZE_UPGRADED', 'RESERVATION', reservationId, {
+      oldCompartmentId: oldComp?.id,
+      newCompartmentId: available.id,
+      oldSize: oldComp?.sizeTier,
+      newSize: targetSizeTier,
+      priceDifference,
+    }, reservation.userId);
+
+    return {
+      reservation: updated,
+      newCompartmentId: available.id,
+      priceDifference,
+    };
   }
 
   public getReservationById(reservationId: string): Reservation | undefined {
