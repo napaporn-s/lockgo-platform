@@ -232,7 +232,7 @@ erDiagram
 
     ACCESS_TOKENS {
         uuid id PK
-        uuid reservation_id FK UK
+        uuid reservation_id FK "Unique 1-to-1 with Reservation"
         string totp_secret "AES-256 encrypted secret"
         string pickup_pin_hash "SHA-256 hash"
         string status "ACTIVE, CONSUMED, REVOKED, EXPIRED"
