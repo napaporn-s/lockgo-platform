@@ -99,6 +99,29 @@ describe('Two-Phase Payment & Double-Entry Financial Ledger Engine', () => {
     expect(refundCashCredit?.amount).toBe(60.0);
   });
 
+  it('should enforce idempotency and prevent duplicate refund posting on retry', async () => {
+    const { reservation } = await reservationService.createReservation({
+      userId: 'user-pay-03-dup',
+      stationId: 'station-asoke-01',
+      compartmentId: 'comp-asoke-s01',
+      domainType: 'PARCEL',
+    });
+
+    const payment = await paymentService.preAuthorizePayment({
+      reservationId: reservation.id,
+      amount: 60.0,
+      paymentMethod: 'PROMPTPAY',
+      idempotencyKey: 'idem-key-003-dup',
+    });
+
+    await paymentService.processInstantGrossRefund(payment.id, 'Solenoid Jammed 1st Call');
+    expect(paymentService.getLedgerEntries(payment.id)).toHaveLength(4);
+
+    // Call refund a 2nd time -> Guarded, no duplicate ledger entries!
+    await paymentService.processInstantGrossRefund(payment.id, 'Solenoid Jammed 2nd Call');
+    expect(paymentService.getLedgerEntries(payment.id)).toHaveLength(4);
+  });
+
   it('should enforce idempotency and prevent duplicate pre-authorization on double-click', async () => {
     const { reservation } = await reservationService.createReservation({
       userId: 'user-pay-04',

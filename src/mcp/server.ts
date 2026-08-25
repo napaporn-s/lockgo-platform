@@ -7,7 +7,10 @@ import { stationService } from '../modules/station/station.service';
 import { db } from '../core/database';
 import { auditLogger } from '../modules/audit/audit-logger';
 import { iotGatewayService } from '../modules/iot/iot-gateway.service';
+import { createHmac, timingSafeEqual } from 'crypto';
 import * as readline from 'readline';
+
+const EMERGENCY_HITL_SECRET = process.env.MCP_EMERGENCY_SECRET || 'lockgo-hitl-override-key-secp256k1';
 
 export interface MCPToolDefinition {
   name: string;
@@ -52,14 +55,14 @@ export const LOCKGO_MCP_TOOLS: MCPToolDefinition[] = [
   },
   {
     name: 'trigger_emergency_door_unlock',
-    description: 'Emergency override to unlock a compartment (Requires Human Approval Gate).',
+    description: 'Emergency override to unlock a compartment (Requires Cryptographic Human Approval Digital Signature).',
     inputSchema: {
       type: 'object',
       properties: {
         stationId: { type: 'string' },
         compartmentId: { type: 'string' },
         reason: { type: 'string' },
-        approvalSignature: { type: 'string' },
+        approvalSignature: { type: 'string', description: 'HMAC-SHA256 digital signature from authorized human supervisor' },
       },
       required: ['stationId', 'compartmentId', 'reason', 'approvalSignature'],
     },
@@ -67,6 +70,15 @@ export const LOCKGO_MCP_TOOLS: MCPToolDefinition[] = [
 ];
 
 export class LockGoMCPServer {
+  /**
+   * Generates a cryptographic HMAC-SHA256 signature for Human-in-the-Loop emergency actions.
+   */
+  public generateEmergencyApprovalSignature(compartmentId: string, reason: string): string {
+    return createHmac('sha256', EMERGENCY_HITL_SECRET)
+      .update(`${compartmentId}:${reason}`)
+      .digest('hex');
+  }
+
   public async handleToolCall(name: string, args: Record<string, any>): Promise<any> {
     switch (name) {
       case 'get_station_health': {
@@ -109,16 +121,31 @@ export class LockGoMCPServer {
       }
 
       case 'trigger_emergency_door_unlock': {
-        if (!args.approvalSignature || args.approvalSignature !== 'HUMAN_OVERRIDE_APPROVED') {
+        if (!args.approvalSignature || typeof args.approvalSignature !== 'string') {
           return {
             status: 'BLOCKED',
-            message: 'Human-in-the-Loop approval signature required for emergency solenoid unlock.',
+            message: 'Human-in-the-Loop cryptographic digital signature required for emergency solenoid unlock.',
           };
         }
+
+        const expectedSig = this.generateEmergencyApprovalSignature(args.compartmentId, args.reason);
+        const sigBuf = Buffer.from(args.approvalSignature, 'hex');
+        const expectedBuf = Buffer.from(expectedSig, 'hex');
+
+        const isValid = sigBuf.length === expectedBuf.length && timingSafeEqual(sigBuf, expectedBuf);
+
+        if (!isValid) {
+          return {
+            status: 'BLOCKED',
+            message: 'Invalid cryptographic Human-in-the-Loop digital signature. Emergency solenoid unlock rejected.',
+          };
+        }
+
         auditLogger.log('EMERGENCY_UNLOCK_TRIGGERED', 'COMPARTMENT', args.compartmentId, {
           reason: args.reason,
           approvalSignature: args.approvalSignature,
         });
+
         return {
           status: 'SUCCESS',
           message: `Emergency unlock executed for compartment ${args.compartmentId}`,

@@ -58,26 +58,31 @@ describe('Model Context Protocol (MCP) Server & AI Governance', () => {
     expect(data.availableCount).toBe(4);
   });
 
-  it('should block emergency door unlock without valid Human-in-the-Loop approval signature', async () => {
+  it('should block emergency door unlock with forged or invalid digital signature', async () => {
     const res = await mcpServer.handleToolCall('trigger_emergency_door_unlock', {
       stationId: 'station-asoke-01',
       compartmentId: 'comp-asoke-m01',
       reason: 'User item stuck inside',
-      approvalSignature: 'UNAUTHORIZED_AI_ATTEMPT',
+      approvalSignature: 'deadbeef12345678',
     });
 
     expect(res.status).toBe('BLOCKED');
-    expect(res.message).toContain('Human-in-the-Loop approval signature required');
+    expect(res.message).toContain('Invalid cryptographic Human-in-the-Loop digital signature');
   });
 
-  it('should execute emergency door unlock when Human-in-the-Loop signature is provided', async () => {
+  it('should execute emergency door unlock when valid cryptographic digital signature is provided', async () => {
+    const compartmentId = 'comp-asoke-m01';
+    const reason = 'Solenoid jam confirmed by field technician';
+    const validSignature = mcpServer.generateEmergencyApprovalSignature(compartmentId, reason);
+
     const res = await mcpServer.handleToolCall('trigger_emergency_door_unlock', {
       stationId: 'station-asoke-01',
-      compartmentId: 'comp-asoke-m01',
-      reason: 'User item stuck inside',
-      approvalSignature: 'HUMAN_OVERRIDE_APPROVED',
+      compartmentId,
+      reason,
+      approvalSignature: validSignature,
     });
 
     expect(res.status).toBe('SUCCESS');
+    expect(res.message).toContain('Emergency unlock executed');
   });
 });

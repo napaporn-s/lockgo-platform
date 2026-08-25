@@ -138,11 +138,17 @@ export class PaymentService {
   /**
    * Instant Gross 100% Refund upon hardware malfunction / solenoid jam (ADR-003).
    * Platform absorbs Gateway MDR fee (Gross Refund Policy).
+   * Guarded against duplicate refund execution (Idempotency).
    */
   public async processInstantGrossRefund(paymentId: string, reason: string): Promise<Payment> {
     const payment = db.getPayment(paymentId);
     if (!payment) {
       throw new ResourceNotFoundError('Payment', paymentId);
+    }
+
+    // Idempotency Guard: Do not post duplicate refund ledger entries if already refunded
+    if (payment.status === 'REFUNDED') {
+      return payment;
     }
 
     const updated: Payment = {

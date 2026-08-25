@@ -15,9 +15,9 @@
 |---|---|---|---|
 | **Calendar Elapsed** | 72 Hours | ~14 Hours (Across Sessions) | Active |
 | **Assessment Topics Covered** | 23 / 23 | 23 / 23 | **100% Completed** |
-| **Production Test Suite** | 100% Pass | 34 Tests Pass (8 Suites, 208ms) | **Verified** |
+| **Production Test Suite** | 100% Pass | 35 Tests Pass (8 Suites, 286ms) | **Verified** |
 | **Type Safety** | 0 TS Errors | 0 Errors (`tsc --noEmit` Strict Mode) | **Verified** |
-| **MCP Server Protocol** | JSON-RPC 2.0 | Validated over Stdio Transport | **Verified** |
+| **MCP Server Protocol** | JSON-RPC 2.0 | Validated over Stdio Transport with HMAC Signature Gate | **Verified** |
 
 ---
 
@@ -59,10 +59,10 @@
 - **Timestamp:** 2026-08-25 07:30 – 08:30+07:00
 - **Activities:**
   - **Emergency PIN Hardening (ADR-012):** Fixed client-side bypass risk by implementing server-side SHA-256/salt hashing on `AccessToken` in DB and `crypto.timingSafeEqual` constant-time verification.
-  - **Real MCP Server (JSON-RPC 2.0):** Upgraded `src/mcp/server.ts` to implement full JSON-RPC 2.0 stdio transport supporting `initialize`, `tools/list`, and `tools/call`.
-  - **Two-Phase Payment & Double-Entry Ledger:** Implemented `src/modules/payment/payment.service.ts` with Pre-Auth, Capture, Instant 100% Gross Refund, and Double-Entry Ledger entries.
+  - **Real MCP Server (JSON-RPC 2.0):** Upgraded `src/mcp/server.ts` to implement full JSON-RPC 2.0 stdio transport supporting `initialize`, `tools/list`, and `tools/call` with Cryptographic HMAC-SHA256 Digital Signature Human Approval Gate.
+  - **Two-Phase Payment & Double-Entry Ledger:** Implemented `src/modules/payment/payment.service.ts` with Pre-Auth, Capture, Idempotent Instant 100% Gross Refund, and Double-Entry Ledger entries.
   - **Timing-Attack Defense:** Replaced all string equality comparisons in HMAC signatures and PINs with `crypto.timingSafeEqual`.
   - **Documentation Refactoring:** Renumbered `docs/` files uniquely (01 to 10), removed stray root artifacts, and updated `README.md` with transparent scope matrices.
 - **Verification Evidence:**
   - `bun run typecheck` -> **0 Errors (Strict TypeScript)**
-  - `bun test` -> **34 / 34 Tests Passed (100% Green in 208ms across 8 test suites)**
+  - `bun test` -> **35 / 35 Tests Passed (100% Green in 286ms across 8 test suites)**
