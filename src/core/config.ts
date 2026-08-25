@@ -4,7 +4,7 @@
 
 export const config = {
   env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: parseInt(process.env.PORT || '3333', 10),
   
   concurrency: {
     redisLockTtlMs: 5000,
