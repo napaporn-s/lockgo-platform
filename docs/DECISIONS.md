@@ -10,15 +10,16 @@
 - **[ADR-002](#adr-002-concurrency-control-and-double-booking-prevention)**: Distributed Locking with Redis Redlock & DB Optimistic/Pessimistic Concurrency Control
 - **[ADR-003](#adr-003-iot-locker-controller-communication-and-offline-fault-tolerance)**: MQTT Broker with Local Edge Gateway & Asynchronous Command-Query Segregation for Hardware Controller
 - **[ADR-004](#adr-004-dynamic-totp-qr-code-and-anti-screenshot-mechanism)**: Rolling Short-Lived Signed JWT/HMAC QR Codes with Proximity/Liveness Verification
-- **[ADR-005](#adr-005-ai-agent-architecture-and-mcp-integration-boundary)**: Role-Based Multi-Agent Ecosystem via Model Context Protocol (MCP) with Strict Human-in-the-Loop Gates
-- **[ADR-006](#adr-006-testing-and-concurrency-stress-verification-strategy)**: 4-Tier Automated Testing Pyramid with Parallel Race Condition Stress Testing
-- **[ADR-007](#adr-007-sre-observability-telemetry-and-automated-failover)**: OpenTelemetry Distributed Tracing & Two-Phase IoT State Recovery
+- **[ADR-005](#adr-005-ai-agent-architecture-mcp-integration-boundary-and-cross-ai-governance)**: Role-Based Multi-Agent Ecosystem via Model Context Protocol (MCP) with Cross-AI Adversarial Review & Human Gates
+- **[ADR-006](#adr-006-testing-and-concurrency-stress-verification-strategy)**: 5-Tier Automated Testing Pyramid with Parallel Race Condition Stress Testing
+- **[ADR-007](#adr-007-sre-observability-telemetry-and-automated-failover)**: OpenTelemetry Distributed Tracing, PII-Masked Structured Logs & SRE Incident Playbooks
 - **[ADR-008](#adr-008-two-phase-payment-settlement-idempotency-and-automated-instant-refund)**: Two-Phase Payment Settlement, Idempotency & Automated Instant Refund Engine
 - **[ADR-009](#adr-009-ups-power-outage-resilience-tiered-load-shedding-and-low-battery-guard)**: UPS Power Outage Resilience (2-4 Hours), Tiered Load-Shedding & Low Battery Guard
 - **[ADR-010](#adr-010-door-left-ajar-escalation-and-investigation-workflow)**: Door Left Ajar Escalation Sequence (30s-90s-180s) & Investigation State Lock
 - **[ADR-011](#adr-011-seamless-in-app-compartment-size-upgrade-engine)**: Seamless In-App Compartment Size Upgrade & Sub-Order Difference Engine
-- **[ADR-012](#adr-012-kiosk-emergency-backup-pin-and-brute-force-rate-limiting)**: Kiosk Emergency Backup PIN Fallback with 3-Attempt Rate Limit Lock
+- **[ADR-012](#adr-012-kiosk-emergency-backup-pin-server-side-salt-hash-and-timing-safe-defense)**: Kiosk Emergency Backup PIN with Server-Side Salt/Hash, `timingSafeEqual` & 3-Attempt Rate Limit Lock
 - **[ADR-013](#adr-013-hybrid-ota-update-strategy-with-dual-partition-ab-watchdog-rollback)**: Hybrid OTA Update Strategy (Docker Blue/Green + Dual-Partition A/B RAUC with Watchdog Rollback)
+- **[ADR-014](#adr-014-pdpa-pii-data-protection-and-recursive-audit-masking-engine)**: PDPA B.E. 2562 Compliance with Recursive Tokenizer-Based PII Masking Engine
 
 ---
 
@@ -47,27 +48,30 @@
 
 ---
 
-## ADR-005: AI Agent Architecture and MCP Integration Boundary
+## ADR-005: AI Agent Architecture, MCP Integration Boundary and Cross-AI Governance
 - **Status:** Approved
-- **Decision:** Model Context Protocol (MCP) tool servers with read-only scopes and Human-in-the-Loop gates for mutations.
+- **Decision:**
+  1. Model Context Protocol (MCP) JSON-RPC 2.0 Stdio server with read-only scopes and HMAC-SHA256 Digital Signature Gates for destructive mutations.
+  2. Multi-Agent Adversarial Review Pipeline (Cross-AI verification with Human Lead as the ultimate Architectural Gatekeeper).
+  3. Security guardrails implemented as deterministic code/compiler constraints rather than autonomous stochastic LLM discretion.
 
 ---
 
 ## ADR-006: Testing and Concurrency Stress Verification Strategy
 - **Status:** Approved
-- **Decision:** 4-tier testing pyramid with 50-worker parallel concurrency stress testing proving 0% double booking.
+- **Decision:** 5-tier testing pyramid with 50-worker parallel concurrency stress testing proving 0.000% double booking.
 
 ---
 
 ## ADR-007: SRE Observability Telemetry and Automated Failover
 - **Status:** Approved
-- **Decision:** OpenTelemetry tracing, Prometheus metrics, structured Pino JSON logs, and SRE incident runbooks.
+- **Decision:** OpenTelemetry distributed tracing, Prometheus metrics, structured JSON logs with PII masking, and 7 production incident playbooks (including Playbook 7 for silent conversion drop).
 
 ---
 
 ## ADR-008: Two-Phase Payment Settlement, Idempotency and Automated Instant Refund
 - **Status:** Approved
-- **Decision:** Pre-Auth Hold at booking -> Capture on `DOOR_OPENED` sensor ACK; instant 100% Gross Refund on hardware jam; Double-Entry Financial Ledger.
+- **Decision:** Pre-Auth Hold at booking -> Capture on `DOOR_OPENED` sensor ACK; instant 100% Gross Refund on hardware jam; Double-Entry Financial Ledger (`CASH`, `UNEARNED_REVENUE`, `SERVICE_REVENUE`).
 
 ---
 
@@ -99,14 +103,15 @@
 
 ---
 
-## ADR-012: Kiosk Emergency Backup PIN and Brute-Force Rate Limiting
+## ADR-012: Kiosk Emergency Backup PIN, Server-Side Salt/Hash and Timing-Safe Defense
 - **Status:** Approved
-- **Date:** 2026-08-24
-- **Context:** Customer phone battery dies in front of the station.
+- **Date:** 2026-08-24 (Updated 2026-08-25)
+- **Context:** Customer phone battery dies in front of the station; security review identified client-side bypass and timing attack risks on naive implementation.
 - **Decision:**
-  1. 6-digit numeric Backup PIN sent via SMS at booking confirmation.
-  2. Kiosk touchscreen provides "Emergency Unlock" entering Phone + 6-digit PIN.
-  3. Guardrail: Max 3 failed attempts before 15-minute rate limit lockout & security alert.
+  1. 6-digit numeric Backup PIN generated with 16-byte random salt and HMAC-SHA256 hash stored on `AccessToken` in DB.
+  2. Client API payload only submits `{ phoneNumber, enteredPin, reservationId }` (expectedPin removed from client payload completely).
+  3. Constant-time hash verification using `crypto.timingSafeEqual` preventing side-channel attacks.
+  4. Brute-force lockout: Max 3 failed attempts triggers 15-minute lockout in Redis.
 
 ---
 
@@ -117,3 +122,14 @@
 - **Decision:**
   1. **Layer 1 (Application/Daemon):** Docker Blue/Green container pull with local loopback healthcheck (<10s zero reboot).
   2. **Layer 2 (Core OS/Firmware):** Dual-Partition A/B (RAUC / Mender.io) with Hardware Watchdog Timer (WDT) auto-rollback if boot fails within 3 minutes (0% brick guarantee).
+
+---
+
+## ADR-014: PDPA PII Data Protection and Recursive Audit Masking Engine
+- **Status:** Approved
+- **Date:** 2026-08-25
+- **Context:** Adherence to Thai Personal Data Protection Act (PDPA B.E. 2562).
+- **Decision:**
+  1. Automated recursive PII masking engine in `AuditLogger` sanitizing Thai mobile phone numbers (`081-***-4567`), 13-digit Thai Citizen IDs (`1-2345-*****-12-3`), Emails (`u***@domain.com`), and Credit Cards (`****-****-****-4444`).
+  2. IP address host octet masking (`192.168.10.***`).
+  3. Redaction of sensitive keys (`pin`, `rawEmergencyPin`, `secret`) before database writes and log shipping.
