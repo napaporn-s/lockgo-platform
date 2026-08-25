@@ -48,37 +48,50 @@ describe('Operational Features & Edge Policies Verification', () => {
   });
 
   describe('Kiosk Emergency Backup PIN & Brute-Force Defense (ADR-012)', () => {
-    it('should allow unlock with correct 6-digit emergency PIN', async () => {
-      const pin = emergencyPinService.generateEmergencyPin();
-      expect(pin).toHaveLength(6);
+    it('should allow unlock with correct 6-digit emergency PIN validated against server DB hash', async () => {
+      const { reservation, rawEmergencyPin } = await reservationService.createReservation({
+        userId: 'user-pin-01',
+        stationId: 'station-asoke-01',
+        compartmentId: 'comp-asoke-s01',
+        domainType: 'PARCEL',
+      });
 
-      const isValid = await emergencyPinService.verifyPin('0811234567', pin, pin, 'res-test-01');
+      expect(rawEmergencyPin).toHaveLength(6);
+
+      // Validate against server DB token
+      const isValid = await emergencyPinService.verifyPin('0811234567', rawEmergencyPin, reservation.id);
       expect(isValid).toBe(true);
     });
 
     it('should lockout phone number for 15 minutes after 3 consecutive failed PIN attempts', async () => {
-      const correctPin = '123456';
+      const { reservation, rawEmergencyPin } = await reservationService.createReservation({
+        userId: 'user-pin-02',
+        stationId: 'station-asoke-01',
+        compartmentId: 'comp-asoke-s01',
+        domainType: 'PARCEL',
+      });
+
       const wrongPin = '000000';
       const phone = '0899999999';
 
       // Attempt 1 -> Fail
       await expect(
-        emergencyPinService.verifyPin(phone, wrongPin, correctPin, 'res-test-02')
-      ).rejects.toThrow();
+        emergencyPinService.verifyPin(phone, wrongPin, reservation.id)
+      ).rejects.toThrow(/Invalid emergency PIN/);
 
       // Attempt 2 -> Fail
       await expect(
-        emergencyPinService.verifyPin(phone, wrongPin, correctPin, 'res-test-02')
-      ).rejects.toThrow();
+        emergencyPinService.verifyPin(phone, wrongPin, reservation.id)
+      ).rejects.toThrow(/Invalid emergency PIN/);
 
       // Attempt 3 -> Brute-force lockout triggered
       await expect(
-        emergencyPinService.verifyPin(phone, wrongPin, correctPin, 'res-test-02')
+        emergencyPinService.verifyPin(phone, wrongPin, reservation.id)
       ).rejects.toThrow(/locked out for 15 minutes/);
 
       // Attempt 4 with correct PIN -> Still blocked due to lockout
       await expect(
-        emergencyPinService.verifyPin(phone, correctPin, correctPin, 'res-test-02')
+        emergencyPinService.verifyPin(phone, rawEmergencyPin, reservation.id)
       ).rejects.toThrow(/Emergency unlock locked for 15 minutes/);
     });
   });

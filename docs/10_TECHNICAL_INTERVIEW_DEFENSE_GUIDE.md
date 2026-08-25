@@ -62,10 +62,10 @@ gantt
 | หัวข้อการประเมิน | คะแนนเต็ม | สิ่งที่ LOCKGO ส่งมอบเพื่อคว้าคะแนนเต็ม (Proof of Mastery) |
 |---|---|---|
 | **1. Software Architecture** | **20** | - C4 Container Diagram, Domain Strategy Pattern, Strangler Fig Roadmap<br>- บันทึกการตัดสินใจทางสถาปัตยกรรมครบถ้วน 13 ฉบับ ([DECISIONS.md](file:///C:/Projects/personal/lockgo-assessment/docs/DECISIONS.md)) |
-| **2. AI Engineering & Agent Design** | **20** | - Role-Based Multi-Agent Hierarchy (BA, SA, PM, DEV, QA, SRE)<br>- MCP Server Implementation ([src/mcp/server.ts](file:///C:/Projects/personal/lockgo-assessment/src/mcp/server.ts)) พร้อม Human-in-the-Loop Gates |
+| **2. AI Engineering & Agent Design** | **20** | - Role-Based Multi-Agent Hierarchy (BA, SA, PM, DEV, QA, SRE)<br>- MCP JSON-RPC 2.0 Server ([src/mcp/server.ts](file:///C:/Projects/personal/lockgo-assessment/src/mcp/server.ts)) พร้อม Human-in-the-Loop Gates |
 | **3. Platform Engineering** | **15** | - 3-Layer Concurrency Locking (Redis Redlock -> DB Row Lock -> Partial Unique DB Constraint)<br>- IoT Outbound-Only CGNAT Traversal, 250ms Solenoid pulse, Dual-tier Debounce |
-| **4. Code Quality & Practice** | **15** | - โค้ด TypeScript แท้ 100% Strict Typecheck (`tsc --noEmit` 0 errors)<br>- ผ่าน Automated Test Suite 28/28 เคส ครอบคลุม Unit, Concurrency, Dynamic QR, Nonce Burner |
-| **5. DevOps & Production Engineering** | **10** | - Multi-stage Dockerfile, Docker Compose, GitHub Actions CI/CD Pipeline<br>- SRE Incident Runbooks Playbooks 1-6 ([06_SRE_INCIDENT_RUNBOOK.md](file:///C:/Projects/personal/lockgo-assessment/docs/06_SRE_INCIDENT_RUNBOOK.md)) |
+| **4. Code Quality & Practice** | **15** | - โค้ด TypeScript แท้ 100% Strict Typecheck (`tsc --noEmit` 0 errors)<br>- ผ่าน Automated Test Suite 34/34 เคส ครอบคลุม Concurrency, Dynamic QR, Payment, Ledger, MCP |
+| **5. DevOps & Production Engineering** | **10** | - Multi-stage Dockerfile, Docker Compose, GitHub Actions CI/CD Pipeline<br>- SRE Incident Runbooks Playbooks 1-6 ([07_SRE_INCIDENT_RUNBOOK.md](file:///C:/Projects/personal/lockgo-assessment/docs/07_SRE_INCIDENT_RUNBOOK.md)) |
 | **6. Security & Reliability** | **5** | - Dynamic Rolling TOTP QR 30s + Atomic Nonce Burner ป้องกัน Replay Attack<br>- กฎหมาย PDPA (PII Masking), ธปท., ปปง., และมาตรฐานความน่าเชื่อถือ MIL-HDBK-217F |
 | **7. AI Workflow & Context Engineering** | **10** | - SSOT Context Priming Pipeline (`AI-SHARED-CORE.md`, `DECISIONS.md`)<br>- แผนงาน 6-Month Enterprise AI Transformation Roadmap ครอบคลุม People, Process, Platform |
 | **8. Documentation & Communication** | **5** | - เอกสารครอบคลุม 12 รายการ พร้อมผัง Mermaid และ OpenAPI Specification |
@@ -79,10 +79,12 @@ gantt
 
 | โมดูล / ฟีเจอร์ | สถานะใน 72 ชั่วโมงนี้ | รายละเอียดการพิสูจน์ / แนวทางออกแบบในอนาคต |
 |---|---|---|
-| **Core Concurrency Engine** | **Implemented 100%** | พิสูจน์ด้วย Automated Stress Test 50 workers แย่ง 1 slot (0% Double Booking) |
+| **Core Concurrency Engine** | **Implemented (In-Memory Engine)** | พิสูจน์ด้วย Automated Stress Test 50 workers แย่ง 1 slot (0% Double Booking) พร้อม Async Yield |
 | **Dynamic Rolling QR & Nonce**| **Implemented 100%** | พิสูจน์ด้วย HMAC Tamper, 30s Expiration, และ Replay Attack Nonce Burner Tests |
+| **Kiosk Emergency Backup PIN** | **Implemented 100%** | จัดเก็บ Salt/Hash บน DB Token ฝั่ง Server, เปรียบเทียบด้วย `timingSafeEqual`, และ Brute-force Lockout 15 นาที |
+| **Two-Phase Payment & Ledger** | **Implemented (Engine Simulation)** | Pre-Auth, Capture, Instant 100% Gross Refund, และ Double-Entry Ledger Entries |
 | **IoT 2-Phase Reconciliation** | **Implemented 100%** | จำลอง MQTT QoS 1, Jammed Solenoid Auto-Void, และ Fallback Sensor Polling |
-| **Model Context Protocol (MCP)**| **Implemented 100%** | รันผ่าน MCP Server จริง พร้อมทดสอบ Read-only Tools และ Human-in-the-Loop Signature Gate |
-| **Operational Edge Handlers** | **Implemented 100%** | Emergency PIN 3-strike Lockout, In-App Size Upgrade, Power Disruption & Door Ajar Alert |
+| **Model Context Protocol (MCP)**| **Implemented 100% (JSON-RPC 2.0)** | Stdio Transport รองรับ `initialize`, `tools/list`, `tools/call` พร้อม Human Approval Gate |
+| **Live REST API Server** | **Implemented 100%** | รันบน `Bun.serve` พอร์ต 3000 พร้อม Endpoints ครบทุกฟีเจอร์ |
 | **Physical Hardware Breadboard**| **Designed (Blueprint)** | มีสเปก ARM SoC, RS-485 Modbus, ATECC608A mTLS, และ RC Debounce ละเอียดใน [05_IOT_HARDWARE_INTEGRATION.md](file:///C:/Projects/personal/lockgo-assessment/docs/05_IOT_HARDWARE_INTEGRATION.md) |
 | **Direct Bank Settlement Switch**| **Designed (Blueprint)** | ออกแบบ Two-Phase Pre-Auth/Capture Flow และ Double-Entry Ledger ไว้ใน [01_BUSINESS_AND_REQUIREMENTS.md](file:///C:/Projects/personal/lockgo-assessment/docs/01_BUSINESS_AND_REQUIREMENTS.md) |

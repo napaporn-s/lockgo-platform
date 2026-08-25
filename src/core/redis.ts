@@ -22,6 +22,7 @@ export class RedisClient {
    * SET with TTL
    */
   public async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
+    await new Promise(resolve => setImmediate(resolve));
     this.store.set(key, {
       value,
       expiresAt: ttlSeconds ? Date.now() + ttlSeconds * 1000 : Infinity,
@@ -32,6 +33,7 @@ export class RedisClient {
    * SETNX with TTL (Atomic Set If Not Exists)
    */
   public async setnx(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+    await new Promise(resolve => setImmediate(resolve));
     const existing = this.store.get(key);
     if (existing && !this.isExpired(existing)) {
       return false; // Key already exists and is active
@@ -45,6 +47,7 @@ export class RedisClient {
   }
 
   public async get(key: string): Promise<string | null> {
+    await new Promise(resolve => setImmediate(resolve));
     const entry = this.store.get(key);
     if (!entry) return null;
     if (this.isExpired(entry)) {
@@ -55,15 +58,18 @@ export class RedisClient {
   }
 
   public async del(key: string): Promise<number> {
+    await new Promise(resolve => setImmediate(resolve));
     const deleted = this.store.delete(key);
     return deleted ? 1 : 0;
   }
 
   public async delete(key: string): Promise<boolean> {
+    await new Promise(resolve => setImmediate(resolve));
     return this.store.delete(key);
   }
 
   public async increment(key: string): Promise<number> {
+    await new Promise(resolve => setImmediate(resolve));
     const entry = this.store.get(key);
     let currentVal = 0;
     let expiresAt = Infinity;
@@ -82,6 +88,7 @@ export class RedisClient {
   }
 
   public async expire(key: string, ttlSeconds: number): Promise<boolean> {
+    await new Promise(resolve => setImmediate(resolve));
     const entry = this.store.get(key);
     if (!entry || this.isExpired(entry)) return false;
     entry.expiresAt = Date.now() + ttlSeconds * 1000;
@@ -89,9 +96,10 @@ export class RedisClient {
   }
 
   /**
-   * Acquire Redlock Distributed Lock
+   * Acquire Redlock Distributed Lock with simulated I/O yield
    */
   public async acquireLock(resource: string, lockValue: string, ttlMs: number): Promise<boolean> {
+    await new Promise(resolve => setImmediate(resolve));
     const key = `lock:${resource}`;
     const existing = this.store.get(key);
     if (existing && !this.isExpired(existing)) {
@@ -109,6 +117,7 @@ export class RedisClient {
    * Release Redlock Distributed Lock atomically using simulated Lua script
    */
   public async releaseLock(resource: string, lockValue: string): Promise<boolean> {
+    await new Promise(resolve => setImmediate(resolve));
     const key = `lock:${resource}`;
     const existing = this.store.get(key);
     if (!existing) return false;

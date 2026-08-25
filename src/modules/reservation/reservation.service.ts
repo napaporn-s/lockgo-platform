@@ -9,6 +9,7 @@ import { config } from '../../core/config';
 import { LockContentionError, CompartmentNotAvailableError, LockGoError } from '../../core/errors';
 import { randomUUID, randomBytes } from 'crypto';
 import { auditLogger } from '../audit/audit-logger';
+import { emergencyPinService } from '../security/emergency-pin.service';
 import { foodPolicy } from '../domains/food.policy';
 import { coldPolicy, laundryPolicy, parcelPolicy } from '../domains/cold-laundry-parcel.policy';
 
@@ -25,7 +26,7 @@ export class ReservationService {
     stationId: string;
     domainType?: DomainVertical;
     domainAttributes?: Record<string, unknown>;
-  }): Promise<{ reservation: Reservation; accessToken: AccessToken }> {
+  }): Promise<{ reservation: Reservation; accessToken: AccessToken; rawEmergencyPin: string }> {
     const { userId, compartmentId, stationId, domainType = 'PARCEL', domainAttributes = {} } = params;
     const lockResource = `compartment:${compartmentId}`;
     const lockValue = randomUUID();
@@ -70,11 +71,15 @@ export class ReservationService {
         updatedAt: Date.now(),
       };
 
-      // Generate Access Token & TOTP Secret for dynamic QR code
+      // Generate Access Token, TOTP Secret & Cryptographically Hashed Emergency PIN
+      const { rawPin, salt, hash } = emergencyPinService.generateEmergencyPin();
+
       const accessToken: AccessToken = {
         id: `token-${randomUUID()}`,
         reservationId: reservation.id,
         totpSecret: randomBytes(20).toString('hex'),
+        pickupPinHash: hash,
+        pickupPinSalt: salt,
         status: 'ACTIVE',
         lastRotatedAt: Date.now(),
         expiresAt: holdExpiresAt,
@@ -98,7 +103,7 @@ export class ReservationService {
         holdExpiresAt,
       }, userId);
 
-      return { reservation, accessToken };
+      return { reservation, accessToken, rawEmergencyPin: rawPin };
     } finally {
       // Release Layer 2 DB row lock
       db.releaseCompartmentRowLock(compartmentId);

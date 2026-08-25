@@ -16,14 +16,46 @@ describe('Model Context Protocol (MCP) Server & AI Governance', () => {
     expect(toolNames).toContain('trigger_emergency_door_unlock');
   });
 
-  it('should execute read-only tool get_station_health safely', async () => {
-    const res = await mcpServer.handleToolCall('get_station_health', {
-      stationId: 'station-asoke-01',
+  it('should handle JSON-RPC 2.0 initialize request correctly', async () => {
+    const res = await mcpServer.handleJsonRpcRequest({
+      jsonrpc: '2.0',
+      id: 101,
+      method: 'initialize',
     });
 
-    expect(res.stationCode).toBe('BKK-ASOKE-01');
-    expect(res.totalCompartments).toBe(4);
-    expect(res.availableCount).toBe(4);
+    expect(res.jsonrpc).toBe('2.0');
+    expect(res.id).toBe(101);
+    expect(res.result.serverInfo.name).toBe('lockgo-mcp-server');
+    expect(res.result.protocolVersion).toBe('2024-11-05');
+  });
+
+  it('should handle JSON-RPC 2.0 tools/list request', async () => {
+    const res = await mcpServer.handleJsonRpcRequest({
+      jsonrpc: '2.0',
+      id: 102,
+      method: 'tools/list',
+    });
+
+    expect(res.jsonrpc).toBe('2.0');
+    expect(res.result.tools).toHaveLength(4);
+  });
+
+  it('should execute read-only tool get_station_health via JSON-RPC tools/call safely', async () => {
+    const res = await mcpServer.handleJsonRpcRequest({
+      jsonrpc: '2.0',
+      id: 103,
+      method: 'tools/call',
+      params: {
+        name: 'get_station_health',
+        arguments: { stationId: 'station-asoke-01' },
+      },
+    });
+
+    expect(res.result.content[0].type).toBe('text');
+    const data = JSON.parse(res.result.content[0].text);
+    expect(data.stationCode).toBe('BKK-ASOKE-01');
+    expect(data.totalCompartments).toBe(4);
+    expect(data.availableCount).toBe(4);
   });
 
   it('should block emergency door unlock without valid Human-in-the-Loop approval signature', async () => {

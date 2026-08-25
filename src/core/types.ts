@@ -16,6 +16,8 @@ export type HardwareSensorState = 'OPEN' | 'CLOSED' | 'UNKNOWN';
 
 export type HardwareLockState = 'LOCKED' | 'UNLOCKED' | 'PENDING_VERIFICATION' | 'JAMMED';
 
+export type PaymentStatus = 'PENDING_AUTH' | 'CAPTURED' | 'VOIDED' | 'REFUNDED' | 'FAILED';
+
 export interface LocationPoint {
   latitude: number;
   longitude: number;
@@ -71,9 +73,34 @@ export interface AccessToken {
   id: string;
   reservationId: string;
   totpSecret: string;
+  pickupPinHash: string;
+  pickupPinSalt: string;
   status: 'ACTIVE' | 'CONSUMED' | 'REVOKED' | 'EXPIRED';
   lastRotatedAt: number;
   expiresAt: number;
+}
+
+export interface Payment {
+  id: string;
+  reservationId: string;
+  idempotencyKey: string;
+  amount: number;
+  currency: 'THB';
+  paymentMethod: 'PROMPTPAY' | 'CREDIT_CARD';
+  status: PaymentStatus;
+  gatewayReference?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface FinancialLedgerEntry {
+  id: string;
+  paymentId: string;
+  entryType: 'DEBIT' | 'CREDIT';
+  accountName: 'UNEARNED_REVENUE' | 'CASH' | 'SERVICE_REVENUE' | 'REFUND_EXPENSE';
+  amount: number;
+  description: string;
+  timestamp: number;
 }
 
 export interface AuditLog {

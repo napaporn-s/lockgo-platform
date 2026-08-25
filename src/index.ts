@@ -9,6 +9,7 @@ console.log(`[LOCKGO] Starting Smart Locker Platform in ${config.env} mode...`);
 console.log(`[LOCKGO] 3-Layer Concurrency Engine: READY (Redlock + ACID DB + Unique Constraints)`);
 console.log(`[LOCKGO] Dynamic Security Guard: READY (30s Rolling TOTP / HMAC-SHA256)`);
 console.log(`[LOCKGO] IoT Gateway: READY (MQTT 2-Phase Lock Reconciliation)`);
+console.log(`[LOCKGO] Two-Phase Payment & Ledger: READY (Gross Refund & Double-Entry)`);
 
 const server = Bun.serve({
   port: config.port,
@@ -39,6 +40,7 @@ const server = Bun.serve({
             concurrency: '3-Layer Redlock+ACID',
             security: 'TOTP 30s + Nonce Burner',
             iot: 'MQTT 2-Phase Reconciliation',
+            payment: 'Two-Phase Pre-Auth/Capture + Ledger',
           }
         }), { status: 200, headers });
       }
@@ -92,7 +94,36 @@ const server = Bun.serve({
         return new Response(JSON.stringify(result), { status: 200, headers });
       }
 
-      // 8. GET /api/admin/audit-logs
+      // 8. POST /api/payments/pre-authorize
+      if (pathname === '/api/payments/pre-authorize' && req.method === 'POST') {
+        const body = await req.json();
+        const result = await appApi.preAuthorizePayment(body);
+        return new Response(JSON.stringify(result), { status: 201, headers });
+      }
+
+      // 9. POST /api/payments/:id/capture
+      const matchCapture = pathname.match(/^\/api\/payments\/([^/]+)\/capture$/);
+      if (matchCapture && req.method === 'POST') {
+        const result = await appApi.capturePayment(matchCapture[1]);
+        return new Response(JSON.stringify(result), { status: 200, headers });
+      }
+
+      // 10. POST /api/payments/:id/refund
+      const matchRefund = pathname.match(/^\/api\/payments\/([^/]+)\/refund$/);
+      if (matchRefund && req.method === 'POST') {
+        const body = await req.json();
+        const result = await appApi.refundPayment(matchRefund[1], body.reason || 'Hardware issue');
+        return new Response(JSON.stringify(result), { status: 200, headers });
+      }
+
+      // 11. GET /api/admin/financial-ledger
+      if (pathname === '/api/admin/financial-ledger' && req.method === 'GET') {
+        const paymentId = searchParams.get('paymentId') || undefined;
+        const result = await appApi.getFinancialLedger(paymentId);
+        return new Response(JSON.stringify(result), { status: 200, headers });
+      }
+
+      // 12. GET /api/admin/audit-logs
       if (pathname === '/api/admin/audit-logs' && req.method === 'GET') {
         const result = await appApi.getAuditLogs();
         return new Response(JSON.stringify(result), { status: 200, headers });

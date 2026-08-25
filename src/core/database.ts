@@ -1,8 +1,8 @@
 /**
- * LOCKGO — Database Layer (Simulating PostgreSQL 16 ACID Transactions, Row Locking, and Constraints)
+ * LOCKGO — Database Layer (Simulating PostgreSQL 16 ACID Transactions, Row Locking, Constraints, and Ledger)
  */
 
-import { Station, Compartment, Reservation, AccessToken, AuditLog } from './types';
+import { Station, Compartment, Reservation, AccessToken, Payment, FinancialLedgerEntry, AuditLog } from './types';
 import { CompartmentNotAvailableError, ResourceNotFoundError } from './errors';
 
 export class Database {
@@ -10,6 +10,8 @@ export class Database {
   private compartments = new Map<string, Compartment>();
   private reservations = new Map<string, Reservation>();
   private accessTokens = new Map<string, AccessToken>();
+  private payments = new Map<string, Payment>();
+  private ledgerEntries: FinancialLedgerEntry[] = [];
   private auditLogs: AuditLog[] = [];
 
   // Simulated DB row locks (FOR UPDATE)
@@ -24,6 +26,8 @@ export class Database {
     this.compartments.clear();
     this.reservations.clear();
     this.accessTokens.clear();
+    this.payments.clear();
+    this.ledgerEntries = [];
     this.auditLogs = [];
     this.rowLocks.clear();
     this.seedDefaultData();
@@ -129,9 +133,11 @@ export class Database {
 
   /**
    * Simulates: SELECT ... WHERE id = $1 AND status = 'AVAILABLE' FOR UPDATE;
-   * with Optimistic/Pessimistic concurrency guarantees.
+   * with Optimistic/Pessimistic concurrency guarantees and realistic async I/O yield.
    */
   public async selectCompartmentForUpdate(compartmentId: string): Promise<Compartment> {
+    await new Promise(resolve => setImmediate(resolve));
+
     if (this.rowLocks.has(compartmentId)) {
       throw new CompartmentNotAvailableError(compartmentId);
     }
@@ -184,6 +190,10 @@ export class Database {
     return this.reservations.get(id);
   }
 
+  public getReservationByCode(code: string): Reservation | undefined {
+    return Array.from(this.reservations.values()).find(r => r.reservationCode === code);
+  }
+
   public updateReservation(reservation: Reservation): void {
     this.reservations.set(reservation.id, { ...reservation, updatedAt: Date.now() });
   }
@@ -195,6 +205,34 @@ export class Database {
 
   public getAccessToken(reservationId: string): AccessToken | undefined {
     return this.accessTokens.get(reservationId);
+  }
+
+  // --- Payments & Double-Entry Ledger ---
+  public createPayment(payment: Payment): void {
+    this.payments.set(payment.id, { ...payment });
+  }
+
+  public getPayment(id: string): Payment | undefined {
+    return this.payments.get(id);
+  }
+
+  public getPaymentByReservation(reservationId: string): Payment | undefined {
+    return Array.from(this.payments.values()).find(p => p.reservationId === reservationId);
+  }
+
+  public updatePayment(payment: Payment): void {
+    this.payments.set(payment.id, { ...payment, updatedAt: Date.now() });
+  }
+
+  public appendLedgerEntry(entry: FinancialLedgerEntry): void {
+    this.ledgerEntries.push({ ...entry });
+  }
+
+  public getLedgerEntries(paymentId?: string): FinancialLedgerEntry[] {
+    if (paymentId) {
+      return this.ledgerEntries.filter(e => e.paymentId === paymentId);
+    }
+    return [...this.ledgerEntries];
   }
 
   // --- Audit Logs ---

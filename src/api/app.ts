@@ -7,6 +7,7 @@ import { reservationService } from '../modules/reservation/reservation.service';
 import { dynamicQRService } from '../modules/security/dynamic-qr.service';
 import { emergencyPinService } from '../modules/security/emergency-pin.service';
 import { lockReconciliationService } from '../modules/iot/reconciliation.service';
+import { paymentService } from '../modules/payment/payment.service';
 import { auditLogger } from '../modules/audit/audit-logger';
 import { LockGoError, ResourceNotFoundError } from '../core/errors';
 import { db } from '../core/database';
@@ -51,15 +52,13 @@ export class AppApi {
     domainAttributes?: Record<string, unknown>;
   }) {
     const result = await reservationService.createReservation(payload);
-    // Generate an emergency PIN for SMS dispatch (ADR-012)
-    const emergencyPin = emergencyPinService.generateEmergencyPin();
 
     return {
       status: 'success',
       data: {
         reservation: result.reservation,
         accessTokenId: result.accessToken.id,
-        emergencyPin, // Sent via SMS to user
+        emergencyPin: result.rawEmergencyPin, // Sent via SMS to user
       },
     };
   }
@@ -133,7 +132,7 @@ export class AppApi {
 
   /**
    * POST /api/unlock/emergency-pin (ADR-012)
-   * Kiosk fallback unlock with phone + 6-digit PIN
+   * Kiosk fallback unlock with phone + 6-digit PIN verified against server DB hash
    */
   public async unlockWithEmergencyPin(payload: {
     stationId: string;
@@ -141,15 +140,14 @@ export class AppApi {
     reservationId: string;
     phoneNumber: string;
     enteredPin: string;
-    expectedPin: string;
   }) {
-    const { stationId, compartmentId, reservationId, phoneNumber, enteredPin, expectedPin } = payload;
+    const { stationId, compartmentId, reservationId, phoneNumber, enteredPin } = payload;
 
     const comp = db.getCompartment(compartmentId);
     if (!comp) throw new ResourceNotFoundError('Compartment', compartmentId);
 
-    // Validate PIN with rate limiting
-    await emergencyPinService.verifyPin(phoneNumber, enteredPin, expectedPin, reservationId);
+    // Validate PIN against server-side hashed token with rate limiting
+    await emergencyPinService.verifyPin(phoneNumber, enteredPin, reservationId);
 
     // Trigger IoT Unlock
     const unlockResult = await lockReconciliationService.executeUnlockWithReconciliation({
@@ -166,6 +164,54 @@ export class AppApi {
       status: 'success',
       message: 'Emergency PIN verified and locker unlocked',
       data: unlockResult,
+    };
+  }
+
+  /**
+   * POST /api/payments/pre-authorize
+   */
+  public async preAuthorizePayment(payload: {
+    reservationId: string;
+    amount: number;
+    paymentMethod: 'PROMPTPAY' | 'CREDIT_CARD';
+    idempotencyKey: string;
+  }) {
+    const payment = await paymentService.preAuthorizePayment(payload);
+    return {
+      status: 'success',
+      data: payment,
+    };
+  }
+
+  /**
+   * POST /api/payments/:id/capture
+   */
+  public async capturePayment(paymentId: string) {
+    const payment = await paymentService.capturePayment(paymentId);
+    return {
+      status: 'success',
+      data: payment,
+    };
+  }
+
+  /**
+   * POST /api/payments/:id/refund
+   */
+  public async refundPayment(paymentId: string, reason: string) {
+    const payment = await paymentService.processInstantGrossRefund(paymentId, reason);
+    return {
+      status: 'success',
+      data: payment,
+    };
+  }
+
+  /**
+   * GET /api/admin/financial-ledger
+   */
+  public async getFinancialLedger(paymentId?: string) {
+    return {
+      status: 'success',
+      data: paymentService.getLedgerEntries(paymentId),
     };
   }
 

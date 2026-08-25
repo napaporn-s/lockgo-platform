@@ -198,7 +198,7 @@ LOCKGO API ทำงานบนโปรโตคอล RESTful JSON ผ่า�
 ---
 
 #### `POST /api/unlock/emergency-pin`
-- **Description:** ปลดล็อกตู้ผ่านหน้าจอ Kiosk ด้วยเบอร์โทรศัพท์ + Backup PIN 6 หลัก (ADR-012)
+- **Description:** ปลดล็อกตู้ผ่านหน้าจอ Kiosk ด้วยเบอร์โทรศัพท์ + Backup PIN 6 หลัก โดยตรวจสอบเทียบกับ Cryptographic Hash ในฐานข้อมูลเซิร์ฟเวอร์ (ADR-012)
 - **Request Body:**
 ```json
 {
@@ -206,8 +206,7 @@ LOCKGO API ทำงานบนโปรโตคอล RESTful JSON ผ่า�
   "compartmentId": "comp-asoke-s01",
   "reservationId": "res-8f43a9b2-10c5-4921",
   "phoneNumber": "0811234567",
-  "enteredPin": "849201",
-  "expectedPin": "849201"
+  "enteredPin": "849201"
 }
 ```
 - **Response (200 OK):**
@@ -222,11 +221,106 @@ LOCKGO API ทำงานบนโปรโตคอล RESTful JSON ผ่า�
 }
 ```
 - **Error Responses:**
+  - `401 Unauthorized`: รหัส PIN ไม่ถูกต้อง
   - `429 Too Many Requests`: กรอก PIN ผิดติดต่อกันครบ 3 ครั้ง ระบบสั่งล็อกเมนู 15 นาที (`KIOSK_PIN_LOCKED_OUT`)
 
 ---
 
-### 2.4 IoT Hardware & Safety Webhooks
+### 2.4 Two-Phase Payment & Financial Ledger
+
+#### `POST /api/payments/pre-authorize`
+- **Description:** วงเงินกันยอด (Pre-Authorization Hold) ก่อนผู้ใช้เข้าเปิดตู้ พร้อมบันทึก Ledger
+- **Request Body:**
+```json
+{
+  "reservationId": "res-8f43a9b2-10c5-4921",
+  "amount": 45.0,
+  "paymentMethod": "PROMPTPAY",
+  "idempotencyKey": "idem-pay-8f43a9b2-10c5"
+}
+```
+- **Response (201 Created):**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "pay-9b12a812",
+    "reservationId": "res-8f43a9b2-10c5-4921",
+    "amount": 45.0,
+    "currency": "THB",
+    "status": "PENDING_AUTH"
+  }
+}
+```
+
+---
+
+#### `POST /api/payments/:id/capture`
+- **Description:** ตัดเงินจริง (Capture) เมื่อผู้ใช้ฝากของสำเร็จ พร้อมบันทึกรับรู้รายได้ (Service Revenue)
+- **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "pay-9b12a812",
+    "status": "CAPTURED"
+  }
+}
+```
+
+---
+
+#### `POST /api/payments/:id/refund`
+- **Description:** คืนเงินเต็มจำนวน 100% (Instant Gross Refund) เมื่อเกิดเหตุกรณีกลอนติดขัดหรือตู้ขัดข้อง
+- **Request Body:**
+```json
+{
+  "reason": "Solenoid Lock Jammed on compartment comp-asoke-s01"
+}
+```
+- **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "pay-9b12a812",
+    "status": "REFUNDED"
+  }
+}
+```
+
+---
+
+#### `GET /api/admin/financial-ledger`
+- **Description:** ตรวจสอบประวัติบัญชีคู่ (Double-Entry Ledger)
+- **Response (200 OK):**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "id": "led-1",
+      "paymentId": "pay-9b12a812",
+      "entryType": "DEBIT",
+      "accountName": "CASH",
+      "amount": 45.0,
+      "description": "Pre-auth hold for reservation"
+    },
+    {
+      "id": "led-2",
+      "paymentId": "pay-9b12a812",
+      "entryType": "CREDIT",
+      "accountName": "UNEARNED_REVENUE",
+      "amount": 45.0,
+      "description": "Unearned revenue liability"
+    }
+  ]
+}
+```
+
+---
+
+### 2.5 IoT Hardware & Safety Webhooks
 
 #### `POST /api/iot/events/power-disrupted`
 - **Description:** รับแจ้งเหตุไฟฟ้าดับจากตู้ สลับโหมด `Emergency Power Saving` และระงับการเปิดจองใหม่
@@ -268,7 +362,7 @@ LOCKGO API ทำงานบนโปรโตคอล RESTful JSON ผ่า�
 
 ---
 
-### 2.5 Admin & Audit Logs
+### 2.6 Admin & Audit Logs
 
 #### `GET /api/admin/audit-logs`
 - **Description:** ดึงประวัติ Audit Trail แบบ Immutable พร้อมทำ PII Masking

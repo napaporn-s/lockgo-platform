@@ -2,7 +2,7 @@
  * LOCKGO — Dynamic TOTP / HMAC-SHA256 Rolling QR Code Security Service
  */
 
-import { createHmac, randomBytes } from 'crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { config } from '../../core/config';
 import { InvalidSecurityTokenError } from '../../core/errors';
 import { nonceBurner } from './nonce-burner';
@@ -41,7 +41,7 @@ export class DynamicQRService {
   /**
    * Validates dynamic token scanned by physical locker hardware scanner.
    * Enforces:
-   * 1. Valid signature with reservation secret
+   * 1. Constant-time timingSafeEqual HMAC verification with reservation secret
    * 2. Timestamp within +/- 1 window drift tolerance (30s)
    * 3. Single-use atomic nonce burning (anti-screenshot/replay)
    */
@@ -74,13 +74,16 @@ export class DynamicQRService {
       );
     }
 
-    // 2. Verify HMAC Signature
+    // 2. Verify HMAC Signature with constant-time comparison (timingSafeEqual)
     const dataToSign = `${reservationId}:${timeWindow}:${nonce}`;
     const expectedSignature = createHmac(config.security.hmacAlgorithm, secretKey)
       .update(dataToSign)
       .digest('hex');
 
-    if (signature !== expectedSignature) {
+    const sigBuf = Buffer.from(signature, 'hex');
+    const expectedBuf = Buffer.from(expectedSignature, 'hex');
+
+    if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) {
       throw new InvalidSecurityTokenError('Cryptographic signature mismatch');
     }
 
