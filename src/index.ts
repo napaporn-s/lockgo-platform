@@ -10,6 +10,7 @@ console.log(`[LOCKGO] 3-Layer Concurrency Engine: READY (Redlock + ACID DB + Uni
 console.log(`[LOCKGO] Dynamic Security Guard: READY (30s Rolling TOTP / HMAC-SHA256)`);
 console.log(`[LOCKGO] IoT Gateway: READY (MQTT 2-Phase Lock Reconciliation)`);
 console.log(`[LOCKGO] Two-Phase Payment & Ledger: READY (Gross Refund & Double-Entry)`);
+console.log(`[LOCKGO] PDPA PII Masking Audit Stream: READY (Regex Tokenizer)`);
 
 const server = Bun.serve({
   port: config.port,
@@ -41,6 +42,7 @@ const server = Bun.serve({
             security: 'TOTP 30s + Nonce Burner',
             iot: 'MQTT 2-Phase Reconciliation',
             payment: 'Two-Phase Pre-Auth/Capture + Ledger',
+            compliance: 'PDPA B.E. 2562 PII Masking',
           }
         }), { status: 200, headers });
       }
@@ -49,7 +51,11 @@ const server = Bun.serve({
       if (pathname === '/api/stations' && req.method === 'GET') {
         const lat = searchParams.get('lat') ? parseFloat(searchParams.get('lat')!) : undefined;
         const lng = searchParams.get('lng') ? parseFloat(searchParams.get('lng')!) : undefined;
-        const radius = searchParams.get('radius') ? parseFloat(searchParams.get('radius')!) : undefined;
+        const radius = searchParams.get('radiusKm')
+          ? parseFloat(searchParams.get('radiusKm')!)
+          : searchParams.get('radius')
+          ? parseFloat(searchParams.get('radius')!)
+          : undefined;
         const result = await appApi.getStations(lat, lng, radius);
         return new Response(JSON.stringify(result), { status: 200, headers });
       }

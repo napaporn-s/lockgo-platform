@@ -4,7 +4,7 @@
 > **Candidate:** Napaporn Suttinarksombat (Koy)  
 > **Role:** Senior AI Fullstack Platform Engineer  
 > **Score Target:** 100 / 100 Points  
-> **Version:** 1.0.0 (Comprehensive Technical Defense Strategy)
+> **Version:** 2.0.0 (Comprehensive Technical Defense Strategy)
 
 ---
 
@@ -22,7 +22,7 @@ Software Engineer ระดับ Senior ไม่ได้มีหน้าท
 3. **Automated Verification Harness & Feedback Loops (ระบบตรวจทานอัตโนมัติ):**
    - โค้ดที่ AI สร้างขึ้นไม่มีความหมายหากพิสูจน์ไม่ได้ Senior ต้องสร้าง **Automated Testing Harness** (เช่น Concurrency Race Stress Test 50 workers, Property-based Tests, Strict Typecheck `tsc --noEmit`) เพื่อเป็น Feedback Loop ให้ AI รันตรวจทานและแก้ไขตัวเอง (Self-Healing Code) ได้ทันที
 4. **Production Safety & Human-in-the-Loop Governance (กำแพงความปลอดภัยระดับองค์กร):**
-   - สร้างกลไก Least-Privilege Scoping บน MCP Tools โดยจำกัดให้ AI มีสิทธิ์เพียง Read-Only และบังคับผ่าน **Human Digital Signature Approval Gate** ก่อนทำลายหรือแก้ไขข้อมูลสำคัญ (เช่น Schema Migration, Emergency Unlock, Financial Void)
+   - สร้างกลไก Least-Privilege Scoping บน MCP Tools โดยจำกัดให้ AI มีสิทธิ์เพียง Read-Only และบังคับผ่าน **HMAC-SHA256 Digital Signature Approval Gate** ก่อนทำลายหรือแก้ไขข้อมูลสำคัญ (เช่น Schema Migration, Emergency Unlock, Financial Void)
 5. **Developer Platform & Multi-Agent Multiplier (แพลตฟอร์มเพิ่มพลังทีม):**
    - เปลี่ยนกระบวนการส่งมอบงานตั้งแต่ **PRD -> Architecture -> Code -> Test -> Deploy -> Production** ให้กลายเป็น Pipeline ที่มี AI Subagents เฉพาะทางคอยขับเคลื่อน ช่วยให้ทีมพัฒนาขนาด 10-50 คน ส่งมอบงานได้เร็วขึ้นโดยไม่สูญเสียคุณภาพ
 
@@ -62,12 +62,12 @@ gantt
 | หัวข้อการประเมิน | คะแนนเต็ม | สิ่งที่ LOCKGO ส่งมอบเพื่อคว้าคะแนนเต็ม (Proof of Mastery) |
 |---|---|---|
 | **1. Software Architecture** | **20** | - C4 Container Diagram, Domain Strategy Pattern, Strangler Fig Roadmap<br>- บันทึกการตัดสินใจทางสถาปัตยกรรมครบถ้วน 13 ฉบับ ([DECISIONS.md](file:///C:/Projects/personal/lockgo-assessment/docs/DECISIONS.md)) |
-| **2. AI Engineering & Agent Design** | **20** | - Role-Based Multi-Agent Hierarchy (BA, SA, PM, DEV, QA, SRE)<br>- MCP JSON-RPC 2.0 Server ([src/mcp/server.ts](file:///C:/Projects/personal/lockgo-assessment/src/mcp/server.ts)) พร้อม Human-in-the-Loop Gates |
-| **3. Platform Engineering** | **15** | - 3-Layer Concurrency Locking (Redis Redlock -> DB Row Lock -> Partial Unique DB Constraint)<br>- IoT Outbound-Only CGNAT Traversal, 250ms Solenoid pulse, Dual-tier Debounce |
-| **4. Code Quality & Practice** | **15** | - โค้ด TypeScript แท้ 100% Strict Typecheck (`tsc --noEmit` 0 errors)<br>- ผ่าน Automated Test Suite 34/34 เคส ครอบคลุม Concurrency, Dynamic QR, Payment, Ledger, MCP |
-| **5. DevOps & Production Engineering** | **10** | - Multi-stage Dockerfile, Docker Compose, GitHub Actions CI/CD Pipeline<br>- SRE Incident Runbooks Playbooks 1-6 ([07_SRE_INCIDENT_RUNBOOK.md](file:///C:/Projects/personal/lockgo-assessment/docs/07_SRE_INCIDENT_RUNBOOK.md)) |
-| **6. Security & Reliability** | **5** | - Dynamic Rolling TOTP QR 30s + Atomic Nonce Burner ป้องกัน Replay Attack<br>- กฎหมาย PDPA (PII Masking), ธปท., ปปง., และมาตรฐานความน่าเชื่อถือ MIL-HDBK-217F |
-| **7. AI Workflow & Context Engineering** | **10** | - SSOT Context Priming Pipeline (`AI-SHARED-CORE.md`, `DECISIONS.md`)<br>- แผนงาน 6-Month Enterprise AI Transformation Roadmap ครอบคลุม People, Process, Platform |
+| **2. AI Engineering & Agent Design** | **20** | - Role-Based Multi-Agent Hierarchy (BA, SA, PM, DEV, QA, SRE), Agent I/O Table<br>- MCP JSON-RPC 2.0 Server ([src/mcp/server.ts](file:///C:/Projects/personal/lockgo-assessment/src/mcp/server.ts)) พร้อม HMAC Digital Signature Gates |
+| **3. Platform Engineering** | **15** | - 3-Layer Concurrency Locking (Redis Redlock -> DB Row Lock -> Partial Unique DB Constraint)<br>- IoT Outbound-Only CGNAT Traversal, 250ms Solenoid pulse, Dual-tier Debounce<br>- Internal Tools Prioritization Matrix (Topic 19: WSJF Framework) |
+| **4. Code Quality & Practice** | **15** | - โค้ด TypeScript แท้ 100% Strict Typecheck (`tsc --noEmit` 0 errors)<br>- ผ่าน Automated Test Suite 41/41 เคส ครอบคลุม Concurrency, Dynamic QR, Payment, Ledger, PII Masking, MCP |
+| **5. DevOps & Production Engineering** | **10** | - Multi-stage Dockerfile, Docker Compose, GitHub Actions CI/CD Pipeline<br>- SRE Incident Runbooks Playbooks 1-7 ([07_SRE_INCIDENT_RUNBOOK.md](file:///C:/Projects/personal/lockgo-assessment/docs/07_SRE_INCIDENT_RUNBOOK.md)) รวมทั้งกรณี Silent Conversion Drop (-30%) |
+| **6. Security & Reliability** | **5** | - Dynamic Rolling TOTP QR 30s + Atomic Nonce Burner ป้องกัน Replay Attack<br>- PDPA PII Masking Engine (เบอร์โทร, เลขบัตรประชาชน 13 หลัก, อีเมล, บัตรเครดิต)<br>- กฎหมาย ธปท., ปปง., และมาตรฐานความน่าเชื่อถือ MIL-HDBK-217F |
+| **7. AI Workflow & Context Engineering** | **10** | - SSOT Context Priming Pipeline (`AI-SHARED-CORE.md`, `DECISIONS.md`)<br>- AI Code Review Evolution Artifact (Topic 21: Naive Draft -> Review -> Production Hardening)<br>- แผนงาน 6-Month Enterprise AI Transformation Roadmap |
 | **8. Documentation & Communication** | **5** | - เอกสารครอบคลุม 12 รายการ พร้อมผัง Mermaid และ OpenAPI Specification |
 | **รวม** | **100** | **ระดับ Senior AI Fullstack Platform Engineer (Production Standard)** |
 
@@ -82,9 +82,11 @@ gantt
 | **Core Concurrency Engine** | **Implemented (In-Memory Engine)** | พิสูจน์ด้วย Automated Stress Test 50 workers แย่ง 1 slot (0% Double Booking) พร้อม Async Yield |
 | **Dynamic Rolling QR & Nonce**| **Implemented 100%** | พิสูจน์ด้วย HMAC Tamper, 30s Expiration, และ Replay Attack Nonce Burner Tests |
 | **Kiosk Emergency Backup PIN** | **Implemented 100%** | จัดเก็บ Salt/Hash บน DB Token ฝั่ง Server, เปรียบเทียบด้วย `timingSafeEqual`, และ Brute-force Lockout 15 นาที |
-| **Two-Phase Payment & Ledger** | **Implemented (Engine Simulation)** | Pre-Auth, Capture, Instant 100% Gross Refund, และ Double-Entry Ledger Entries |
+| **Two-Phase Payment & Ledger** | **Implemented (Engine Simulation)** | Pre-Auth, Capture, Idempotent Instant 100% Gross Refund, และ Double-Entry Ledger Entries |
+| **PDPA PII Masking Engine** | **Implemented 100%** | Recursive Tokenizer Sanitization สำหรับเบอร์โทร (`081-***-4567`), บัตร ปชช. 13 หลัก (`1-2345-*****-12-3`), อีเมล, บัตรเครดิต |
 | **IoT 2-Phase Reconciliation** | **Implemented 100%** | จำลอง MQTT QoS 1, Jammed Solenoid Auto-Void, และ Fallback Sensor Polling |
-| **Model Context Protocol (MCP)**| **Implemented 100% (JSON-RPC 2.0)** | Stdio Transport รองรับ `initialize`, `tools/list`, `tools/call` พร้อม Human Approval Gate |
-| **Live REST API Server** | **Implemented 100%** | รันบน `Bun.serve` พอร์ต 3000 พร้อม Endpoints ครบทุกฟีเจอร์ |
+| **Model Context Protocol (MCP)**| **Implemented 100% (JSON-RPC 2.0)** | Stdio Transport รองรับ `initialize`, `tools/list`, `tools/call` พร้อม HMAC Digital Signature Gate |
+| **Live REST API Server** | **Implemented 100%** | รันบน `Bun.serve` พอร์ต 3000 พร้อม Endpoints ครบทุกฟีเจอร์ (รองรับทั้ง `radiusKm` และ `radius`) |
+| **Auth & RBAC Service** | **Designed (Blueprint)** | ออกแบบ JWT Claim Structure และ Multi-Tenant Roles (Admin, Field Ops, Driver, Customer) ใน `01_BUSINESS_AND_REQUIREMENTS.md` |
 | **Physical Hardware Breadboard**| **Designed (Blueprint)** | มีสเปก ARM SoC, RS-485 Modbus, ATECC608A mTLS, และ RC Debounce ละเอียดใน [05_IOT_HARDWARE_INTEGRATION.md](file:///C:/Projects/personal/lockgo-assessment/docs/05_IOT_HARDWARE_INTEGRATION.md) |
-| **Direct Bank Settlement Switch**| **Designed (Blueprint)** | ออกแบบ Two-Phase Pre-Auth/Capture Flow และ Double-Entry Ledger ไว้ใน [01_BUSINESS_AND_REQUIREMENTS.md](file:///C:/Projects/personal/lockgo-assessment/docs/01_BUSINESS_AND_REQUIREMENTS.md) |
+| **Production Testcontainers / k6**| **Designed (Blueprint)** | สเปกสำหรับ CI/CD ใน Production ด้วย Containerized PostgreSQL 16 + Redis Cluster และ k6 1,000 VUs Load Testing ใน `04_TESTING_AND_DEVOPS_STRATEGY.md` |

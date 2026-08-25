@@ -287,6 +287,12 @@ erDiagram
     }
 ```
 
+### 4.1 Domain Bounded Contexts: Orders vs Reservations (Domain Design Rationale)
+ในการออกแบบระบบ LOCKGO เราแยก Bounded Contexts ของ **`ORDERS` (พาณิชย์และการเงิน)** ออกจาก **`RESERVATIONS` (ฮาร์ดแวร์และการจัดสรรตู้)** อย่างชัดเจน:
+- **`ORDERS` (Commercial Lifecycle):** รับผิดชอบเรื่องยอดเงินรวม, คูปองส่วนลด, การรวมคำสั่งซื้อหลายช่อง (Batch/Basket Checkout เช่น ซักอบรีด 3 ตะกร้า), ใบเสร็จรับเงิน และภาษีมูลค่าเพิ่ม
+- **`RESERVATIONS` (Hardware & Slot Allocation Lifecycle):** รับผิดชอบเรื่องการจัดสรรช่องตู้ทางกายภาพ, Concurrency Lock (Redlock + SELECT FOR UPDATE), Dynamic TOTP QR Token, และ IoT Solenoid Unlock State Machine
+- **ความสัมพันธ์ในเฟสต่างๆ:** ในเฟส MVP ธุรกรรม 1 รายการมีความสัมพันธ์แบบ 1-to-1 กับการจอง 1 ช่อง จึงผูก `PAYMENTS` เข้ากับ `RESERVATIONS` โดยตรงเพื่อลดความซับซ้อน แต่แยก Domain Boundary ไว้ล่วงหน้า ทำให้ในเฟสถัดไปสามารถเพิ่มเอนทิตี `ORDERS 1-to-Many RESERVATIONS` เพื่อรองรับ Multi-Compartment Basket Checkout ได้ทันทีโดยไม่ต้องรื้อ Concurrency Engine
+
 ---
 
 ## 5. Concurrency Strategy: 3-Layer Defense Against Double-Booking (ADR-002)

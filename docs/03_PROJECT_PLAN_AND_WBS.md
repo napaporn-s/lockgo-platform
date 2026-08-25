@@ -3,7 +3,7 @@
 > **Role:** Technical Project Manager & Delivery Lead  
 > **Platform:** LOCKGO — Next-Gen Smart Locker Platform  
 > **Author:** Napaporn Suttinarksombat (Koy) & Elena (Technical Assistant)  
-> **Version:** 1.7.0 (Comprehensive Enterprise Delivery Blueprint with MTBF & Reliability Standards)
+> **Version:** 1.8.0 (Comprehensive Enterprise Delivery Blueprint with Internal Tools Matrix)
 
 ---
 
@@ -14,7 +14,7 @@
 
 ### 1.2 Pragmatic Scope Management (Anti-Overengineering Principle)
 ตามกฎ **Karpathy Law A1 (Simplicity First)** และ **A4 (Design Laws)**:
-- **เน้นแก่นคุณค่าสูงสุด (High-Value Critical Paths):** พัฒนา Modular Monolith ด้วย TypeScript ที่มีความสมบูรณ์แบบของ Business Logic, 3-Layer Concurrency Locking (0.000% Double Booking), Dynamic TOTP QR 30s + Nonce Burner, และ IoT 2-Phase Reconciliation
+- **เน้นแก่นคุณค่าสูงสุด (High-Value Critical Paths):** พัฒนา Modular Monolith ด้วย TypeScript ที่มีความสมบูรณ์แบบของ Business Logic, 3-Layer Concurrency Locking (0.000% Double Booking), Dynamic TOTP QR 30s + Nonce Burner, Emergency PIN Salt/Hash, Two-Phase Payment/Ledger, PII Masking, และ IoT 2-Phase Reconciliation
 - **ขอบเขตที่สมเหตุสมผล:** ไม่ตั้ง Kubernetes Cluster 15 โหนด แต่ใช้ **Docker Compose, PostgreSQL 16 + PostGIS, Redis Cluster และ IoT Hardware Simulator** ที่จำลองสถานการณ์เครือข่ายหลุดและเซนเซอร์ติดขัดได้อย่างสมจริง 100%
 
 ---
@@ -81,23 +81,23 @@ flowchart TD
 
 ## 5. Requirements Traceability Matrix (RTM)
 
-| Req ID | Business Requirement | Architecture Component | ADR | Implementation File | Verification Test Suite | Status |
+| Req ID | Requirement | Architecture Component | ADR | Source Code Implementation | Verification Test Suite | Status |
 |---|---|---|---|---|---|---|
-| **REQ-01** | Station Discovery & PostGIS Spatial Filter | `StationModule` | ADR-001 | `src/modules/station/station.service.ts` | `tests/unit/station.test.ts` | **Verified (Pass)** |
-| **REQ-02** | 3-Layer Concurrency Defense (0% Double Booking) | `ReservationModule` | ADR-002 | `src/modules/reservation/reservation.service.ts` | `tests/concurrency/double-booking.test.ts` | **Verified (Pass)** |
-| **REQ-03** | Dynamic Rolling TOTP QR (30s Window) | `AccessSecurityModule`| ADR-004 | `src/modules/security/dynamic-qr.service.ts` | `tests/security/dynamic-qr.test.ts` | **Verified (Pass)** |
-| **REQ-04** | Atomic Single-Use Nonce Burner (`SETNX`) | `AccessSecurityModule`| ADR-004 | `src/modules/security/dynamic-qr.service.ts` | `tests/security/dynamic-qr.test.ts` | **Verified (Pass)** |
-| **REQ-05** | IoT MQTT Unlock Protocol (QoS 1 over mTLS) | `IoTGatewayModule` | ADR-003 | `src/modules/iot/iot-gateway.service.ts` | `tests/iot/reconciliation.test.ts` | **Verified (Pass)** |
-| **REQ-06** | 2-Phase Lock State Reconciliation | `IoTGatewayModule` | ADR-003 | `src/modules/iot/reconciliation.service.ts` | `tests/iot/reconciliation.test.ts` | **Verified (Pass)** |
-| **REQ-07** | Dual-Tier Sensor Debounce (RC + 150ms) | `IoTGatewayModule` | ADR-003 | `src/modules/iot/reconciliation.service.ts` | `tests/iot/reconciliation.test.ts` | **Verified (Pass)** |
-| **REQ-08** | Door Left Ajar Escalation (30s-90s-180s) | `StationModule` | ADR-010 | `src/modules/station/station.service.ts` | `tests/unit/station.test.ts` | **Verified (Pass)** |
-| **REQ-09** | Seamless In-App Size Upgrade Engine | `ReservationModule` | ADR-011 | `src/modules/reservation/reservation.service.ts` | `tests/unit/domain-policies.test.ts` | **Verified (Pass)** |
-| **REQ-10** | Kiosk Emergency Backup PIN (3 Attempts Lock) | `AccessSecurityModule`| ADR-012 | `src/modules/security/dynamic-qr.service.ts` | `tests/security/dynamic-qr.test.ts` | **Verified (Pass)** |
-| **REQ-11** | Food Hygiene Max 120m SLA Policy | `DomainExtension` | ADR-001 | `src/modules/domains/food.policy.ts` | `tests/unit/domain-policies.test.ts` | **Verified (Pass)** |
-| **REQ-12** | Cold Storage Temperature Boundary (2°C - 8°C) | `DomainExtension` | ADR-001 | `src/modules/domains/cold-laundry-parcel.policy.ts`| `tests/unit/domain-policies.test.ts` | **Verified (Pass)** |
-| **REQ-13** | Two-Phase Settlement & Instant Gross Refund | `PaymentModule` | ADR-008 | `src/api/app.ts` | `tests/unit/domain-policies.test.ts` | **Verified (Pass)** |
-| **REQ-14** | Immutable Audit Logging with PII Masking | `AuditModule` | ADR-005 | `src/modules/audit/audit-logger.ts` | `tests/mcp/mcp.test.ts` | **Verified (Pass)** |
-| **REQ-15** | Model Context Protocol (MCP) Server for AI | `MCPModule` | ADR-005 | `src/mcp/server.ts` | `tests/mcp/mcp.test.ts` | **Verified (Pass)** |
+| **REQ-01** | Station Discovery & PostGIS Spatial Filter | `StationModule` | ADR-001 | [`src/modules/station/station.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/station/station.service.ts) | [`tests/unit/station.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/unit/station.test.ts) | **Verified (Pass)** |
+| **REQ-02** | 3-Layer Concurrency Defense (0% Double Booking) | `ReservationModule` | ADR-002 | [`src/modules/reservation/reservation.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/reservation/reservation.service.ts) | [`tests/concurrency/double-booking.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/concurrency/double-booking.test.ts) | **Verified (Pass)** |
+| **REQ-03** | Dynamic Rolling TOTP QR (30s Window) | `AccessSecurityModule`| ADR-004 | [`src/modules/security/dynamic-qr.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/security/dynamic-qr.service.ts) | [`tests/security/dynamic-qr.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/security/dynamic-qr.test.ts) | **Verified (Pass)** |
+| **REQ-04** | Atomic Single-Use Nonce Burner (`SETNX`) | `AccessSecurityModule`| ADR-004 | [`src/modules/security/dynamic-qr.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/security/dynamic-qr.service.ts) | [`tests/security/dynamic-qr.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/security/dynamic-qr.test.ts) | **Verified (Pass)** |
+| **REQ-05** | IoT MQTT Unlock Protocol (QoS 1 over mTLS) | `IoTGatewayModule` | ADR-003 | [`src/modules/iot/iot-gateway.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/iot/iot-gateway.service.ts) | [`tests/iot/reconciliation.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/iot/reconciliation.test.ts) | **Verified (Pass)** |
+| **REQ-06** | 2-Phase Lock State Reconciliation | `IoTGatewayModule` | ADR-003 | [`src/modules/iot/reconciliation.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/iot/reconciliation.service.ts) | [`tests/iot/reconciliation.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/iot/reconciliation.test.ts) | **Verified (Pass)** |
+| **REQ-07** | Dual-Tier Sensor Debounce (RC + 150ms) | `IoTGatewayModule` | ADR-003 | [`src/modules/iot/reconciliation.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/iot/reconciliation.service.ts) | [`tests/iot/reconciliation.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/iot/reconciliation.test.ts) | **Verified (Pass)** |
+| **REQ-08** | Door Left Ajar Escalation (30s-90s-180s) | `StationModule` | ADR-010 | [`src/api/app.ts`](file:///C:/Projects/personal/lockgo-assessment/src/api/app.ts) | [`tests/unit/operational-features.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/unit/operational-features.test.ts) | **Verified (Pass)** |
+| **REQ-09** | Seamless In-App Size Upgrade Engine | `ReservationModule` | ADR-011 | [`src/modules/reservation/reservation.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/reservation/reservation.service.ts) | [`tests/unit/operational-features.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/unit/operational-features.test.ts) | **Verified (Pass)** |
+| **REQ-10** | Kiosk Emergency Backup PIN (Hash + 3-Strike Lock) | `AccessSecurityModule`| ADR-012 | [`src/modules/security/emergency-pin.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/security/emergency-pin.service.ts) | [`tests/unit/operational-features.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/unit/operational-features.test.ts) | **Verified (Pass)** |
+| **REQ-11** | Food Hygiene Max 120m SLA Policy | `DomainExtension` | ADR-001 | [`src/modules/domains/food.policy.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/domains/food.policy.ts) | [`tests/unit/domain-policies.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/unit/domain-policies.test.ts) | **Verified (Pass)** |
+| **REQ-12** | Cold Storage Temperature Boundary (2°C - 8°C) | `DomainExtension` | ADR-001 | [`src/modules/domains/cold-laundry-parcel.policy.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/domains/cold-laundry-parcel.policy.ts)| [`tests/unit/domain-policies.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/unit/domain-policies.test.ts) | **Verified (Pass)** |
+| **REQ-13** | Two-Phase Settlement & Instant Gross Refund | `PaymentModule` | ADR-008 | [`src/modules/payment/payment.service.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/payment/payment.service.ts) | [`tests/unit/payment.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/unit/payment.test.ts) | **Verified (Pass)** |
+| **REQ-14** | Immutable Audit Logging with PDPA PII Masking | `AuditModule` | ADR-005 | [`src/modules/audit/audit-logger.ts`](file:///C:/Projects/personal/lockgo-assessment/src/modules/audit/audit-logger.ts) | [`tests/unit/audit-masking.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/unit/audit-masking.test.ts) | **Verified (Pass)** |
+| **REQ-15** | Model Context Protocol (MCP) JSON-RPC 2.0 Server | `MCPModule` | ADR-005 | [`src/mcp/server.ts`](file:///C:/Projects/personal/lockgo-assessment/src/mcp/server.ts) | [`tests/mcp/mcp.test.ts`](file:///C:/Projects/personal/lockgo-assessment/tests/mcp/mcp.test.ts) | **Verified (Pass)** |
 
 ---
 
@@ -116,15 +116,30 @@ flowchart TD
 
 ---
 
-## 7. Definition of Done (DoD) — Level 4 Production Standard
+## 7. Platform Engineering — Internal Tools Prioritization Matrix (Topic 19)
+
+การจัดลำดับความสำคัญของเครื่องมือภายใน (Internal Tools) ตามโมเดล **WSJF (Weighted Shortest Job First)** และ **RICE Framework**:
+
+| ลำดับ | ชื่อเครื่องมือภายใน (Internal Tool) | กลุ่มผู้ใช้งานหลัก (Target Persona) | ประโยชน์ทางธุรกิจ / ปัญหาที่แก้ | Business Impact (1-5) | User Urgency (1-5) | Dev Effort (1-5) | WSJF Score | เทคโนโลยีที่เลือกใช้ | แผนการส่งมอบ |
+|---|---|---|---|---|---|---|---|---|---|
+| **P1** | **Central Station Telemetry & Desync Ops Console** | Central Ops & SRE | เฝ้าระวังตู้ล็อกเกอร์แบบเรียลไทม์ ตรวจจับเซ็นเซอร์ค้าง/กลอนติดขัด และกด Remote Reconcile | **5** (Critical) | **5** (High) | 2 (Med) | **5.00** | Nuxt 3 + Tailwind + WebSocket Telemetry | **Sprint 1 (Launch-Ready)** |
+| **P2** | **Customer Support Instant Refund & Compartment Override Portal** | Customer Support (Tier 1/2) | คืนเงิน Gross 100% ทันทีเมื่อผู้ใช้แจ้งตู้ติดขัด และสั่งเปิดตู้กรณีฉุกเฉินผ่าน HMAC Digital Signature | **5** (Critical) | **4** (High) | 2 (Med) | **4.50** | Retool / Nuxt Admin + MCP Stdio Bridge | **Sprint 1 (Launch-Ready)** |
+| **P3** | **Field Technician Mobile Diagnostic PWA** | Field Service Engineers | ตรวจสอบสุขภาพตู้หน้างานผ่าน Bluetooth BLE / Local Wi-Fi, สั่งทดสอบรีเลย์ทีละช่อง (Solenoid Pulse), และบันทึก Hot-swap อะไหล่ | **4** (High) | **4** (High) | 2 (Med) | **4.00** | Vite PWA (Offline-First) + Web Bluetooth API | **Sprint 2** |
+| **P4** | **IoT Fleet Remote Firmware & OTA Orchestrator** | IoT Platform Team | จัดการ Rollout A/B Firmware และ Docker Container ไปยังตู้ 500+ จุดทั่วประเทศ พร้อม Auto-Rollback | **4** (High) | **3** (Med) | 3 (High) | **2.33** | BalenaOS / EMQX MQTT OTA Management | **Sprint 3** |
+| **P5** | **Merchant & Laundry Partner Drop-off Portal** | B2B Food & Laundry Partners | ให้พาร์ทเนอร์ร้านค้าเปิดจองตู้ล็อตใหญ่ (Batch Booking) และดูเวลา SLA อาหาร 120 นาที | **3** (Med) | **3** (Med) | 3 (High) | **2.00** | Next.js / Vue + B2B REST API Gateway | **Sprint 4** |
+
+---
+
+## 8. Definition of Done (DoD) — Level 4 Production Standard
 
 ชิ้นงานหรือโมดูลใดๆ จะได้รับการอนุมัติว่า **"Done (L4 Production Standard)"** ก็ต่อเมื่อผ่านเกณฑ์บังคับทั้ง 6 ข้อครบถ้วน:
 1. **TypeScript Strict Typecheck:** ผ่าน `tsc --noEmit` ด้วยค่า 0 Errors 100%
-2. **Linting & Security Gate:** 0 ESLint warnings, dependency audit ปราศจากช่องโหว่ระดับ High/Critical
-3. **Automated Test Coverage:**
-   - 100% Pass บน Unit Tests ทุกโดเมน
-   - 100% Pass บน Concurrency Race Condition Stress Test (พิสูจน์ 0.000% Double Booking ภายใต้ 50 workers)
-   - 100% Pass บน IoT 2-Phase Reconciliation และ Dynamic QR Security Tests
-4. **Architectural Traceability:** โค้ดและฟังก์ชันทุกส่วนต้องอ้างอิงกลับไปยังข้อกำหนด BA และบันทึก ADR-001 ถึง ADR-013 ได้อย่างชัดเจน
-5. **Observability & Audit Trail:** ทุกการเปลี่ยนแปลงสถานะ (Mutation) ต้องลงบันทึกใน Immutable Audit Logger และพ่น Structured JSON Logs
-6. **Containerization & CI/CD:** Build และรันผ่าน Multi-Stage Dockerfile และ Docker Compose ได้อย่างราบรื่น
+2. **Automated Test Coverage:**
+   - 100% Pass บน Unit Tests ทุกโดเมน (Food, Cold, Laundry, Parcel)
+   - 100% Pass บน Concurrency Stress Test 50 workers (พิสูจน์ 0.000% Double Booking)
+   - 100% Pass บน IoT 2-Phase Reconciliation และ Dynamic QR Security
+   - 100% Pass บน Two-Phase Payment, Double-Entry Ledger, และ PDPA PII Masking
+   - 100% Pass บน JSON-RPC 2.0 MCP Protocol
+3. **Architectural Traceability:** โค้ดและฟังก์ชันทุกส่วนต้องอ้างอิงกลับไปยังข้อกำหนด BA และบันทึก ADR-001 ถึง ADR-013 ได้อย่างชัดเจน
+4. **Observability & Audit Trail:** ทุกการเปลี่ยนแปลงสถานะ (Mutation) ต้องลงบันทึกใน Immutable Audit Logger พร้อมทำ PII Masking
+5. **Containerization & CI/CD:** Build ผ่าน Multi-Stage Dockerfile และ GitHub Actions CI Pipeline ได้ 100% Green

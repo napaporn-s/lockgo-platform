@@ -7,23 +7,30 @@
 
 ---
 
-## 1. Test Strategy & The Testing Pyramid
+## 1. Testing Strategy & The Testing Pyramid (Scope Transparency)
 
-To ensure 99.95% platform availability and 0% concurrency failures, LockGo adopts a **4-tier Testing Pyramid**:
+เพื่อความโปร่งใสทางวิศวกรรม (Scope Transparency) ระบบทดสอบของ LOCKGO แบ่งออกเป็น 2 มิติ:
+1. **ชุดทดสอบประเมินผลในเครื่อง (72-Hour Assessment In-Memory Harness):** รันบน Bun Test Runner ทดสอบตรรกะ Concurrency (50 workers), Dynamic QR TOTP, Two-Phase Payment, Double-Entry Ledger, PII Masking, และ JSON-RPC MCP Server
+2. **พิมพ์เขียวระบบทดสอบบนโปรดักชัน (Enterprise Production Testing Blueprint):** แผนการทดสอบแบบ End-to-End บน Testcontainers, k6 Load Testing, และ Playwright E2E
 
 ```mermaid
-pie title LockGo Automated Test Distribution
-    "Unit & Domain Policy Tests" : 50
-    "Integration & Service Tests" : 25
-    "Concurrency & Race Condition Tests" : 15
+pie title LockGo Automated Test Distribution (Production Target)
+    "Unit & Domain Policy Tests" : 45
+    "Integration & Service Tests (Testcontainers)" : 25
+    "Concurrency & Race Stress Tests (k6 / In-memory)" : 15
     "IoT Edge & Chaos Simulation Tests" : 10
+    "Security & Static Analysis (Trivy/ZAP)" : 5
 ```
 
 ### 1.1 Test Levels & Objectives
-1. **Unit & Domain Policy Tests:** Validate business rules in complete isolation (e.g. Food 2-hour storage SLA expiration, Cold Locker temperature boundary validation, Dynamic TOTP generation math).
-2. **Integration Tests:** Test database repositories with real PostgreSQL and Redis containers, verifying spatial queries and foreign key constraints.
-3. **Concurrency Race Condition Stress Tests:** Fire 50-100 parallel asynchronous requests against a single available locker compartment to prove that exactly 1 request succeeds (HTTP 201) and all other concurrent requests fail gracefully (HTTP 409 Conflict) with 0% double booking.
-4. **IoT Edge Fault Tolerance & Chaos Tests:** Simulate network disconnects, delayed MQTT sensor ACKs, and station reboot recovery scenarios.
+
+| Test Tier | Scope & Tooling (Assessment Harness) | Production Enterprise Blueprint | Target Criteria |
+|---|---|---|---|
+| **Tier 1: Unit & Policy Tests** | Bun Test (`tests/unit/`) — ทดสอบ Food 120m SLA, Cold Storage 2-8°C, Laundry Daily Rates, Parcel Multipliers | Isolated pure functions & Domain Entities | 100% Pass, Code Coverage ≥ 85% |
+| **Tier 2: Security & Privacy Tests** | `tests/security/` & `tests/unit/audit-masking.test.ts` — ทดสอบ Dynamic TOTP 30s, TimingSafeEqual HMAC, Nonce Burner, Emergency PIN 3-strike, PDPA PII Regex Masking | OWASP ZAP API Scanning + HashiCorp Vault Hardware Security Module (HSM) | 0 CVEs, Zero Timing Attack Discrepancy |
+| **Tier 3: Concurrency Race Condition** | `tests/concurrency/` — Dispatch 50 concurrent async workers แย่งจอง 1 slot เดียวกันใน Event Loop Microtask | k6 Distributed Load Generator (1,000 VUs) ยิงชน Redis Redlock + PostgreSQL Cluster | Double Booking Rate = 0.000% |
+| **Tier 4: IoT & State Reconciliation** | `tests/iot/` — จำลอง MQTT QoS 1 direct ACK, Jammed Solenoid Auto-Refund, และ Fallback Sensor Polling | Real Hardware Loop (ESP32 / Modbus RS-485 Breadboard + EMQX Test Broker) | Desync MTTR < 5s |
+| **Tier 5: AI & MCP Governance** | `tests/mcp/` — ทดสอบ JSON-RPC 2.0 Stdio Transport (`initialize`, `tools/list`, `tools/call`) และ HMAC Signature Gate | Multi-Agent Evaluation Harness (Cursor / AGY Evaluation Benchmark) | 100% Gate Enforcement on Destructive Actions |
 
 ---
 
@@ -64,31 +71,24 @@ $$\text{Double Booking Rate} = \frac{\text{Successful Duplicate Reservations}}{\
 
 ```mermaid
 flowchart LR
-    Commit["Git Push / PR"] --> LintGate["1. Lint & Format Check
-• ESLint (0 warnings)
-• Prettier"]
-    LintGate --> TypecheckGate["2. Strict Typecheck
-• tsc --noEmit"]
-    TypecheckGate --> SecurityAudit["3. Dependency Audit
-• npm audit (0 high/crit)"]
-    SecurityAudit --> TestSuite["4. Test Automation
-• Unit Tests
-• Integration Tests
-• Concurrency Suite"]
-    TestSuite --> DockerBuild["5. Container Build
-• Multi-stage Docker
-• Vulnerability scan (Trivy)"]
-    DockerBuild --> DeployStage["6. Continuous Deploy
+    Commit["Git Push / PR"] --> TypecheckGate["1. Strict Typecheck
+• bun run typecheck (0 errors)"]
+    TypecheckGate --> TestSuite["2. Automated Tests
+• bun test (41 Tests)
+• Concurrency Stress (50w)
+• PII Masking & MCP"]
+    TestSuite --> DockerBuild["3. Container Build
+• Multi-stage Dockerfile
+• Zero-Vulnerability Base"]
+    DockerBuild --> DeployStage["4. Deployment
 • Dev: Auto-deploy
 • Prod: Manual Approval Gate"]
 ```
 
 ### Pipeline Quality Gates (`.github/workflows/ci.yml`):
-- **Gate 1:** `npm run lint` — Zero ESLint errors or unhandled promises.
-- **Gate 2:** `npm run type-check` — Zero TypeScript type errors with `strict: true`.
-- **Gate 3:** `npm audit --audit-level=high` — Zero high/critical CVE vulnerabilities.
-- **Gate 4:** `npm run test` — 100% test pass rate with coverage threshold ≥ 85%.
-- **Gate 5:** `docker build --target production` — Immutable container image packaging.
+- **Gate 1 (Strict Static Types):** `bun run typecheck` — ตรวจจับ Type Mismatches ด้วย TypeScript Compiler (`strict: true`, 0 errors).
+- **Gate 2 (Automated Test Suites):** `bun test` — รันชุดทดสอบครบ 41 เคส (Unit, Concurrency, IoT, Security, Payment, PII Masking, MCP).
+- **Gate 3 (Production Packaging):** `docker build -t lockgo-platform:latest .` — Build คอนเทนเนอร์ระดับ Production.
 
 ---
 
@@ -96,26 +96,26 @@ flowchart LR
 
 ```dockerfile
 # Stage 1: Build & TypeScript Compilation
-FROM node:22-alpine AS builder
+FROM oven/bun:1.3.14-alpine AS builder
 WORKDIR /app
-COPY package*.json tsconfig.json ./
-RUN npm ci
+COPY package*.json bun.lock tsconfig.json ./
+RUN bun install --frozen-lockfile
 COPY src ./src
-RUN npm run build
+RUN bun build src/index.ts --outdir dist --target bun
 
-# Stage 2: Production Minimal Runtime (Distroless / Alpine Non-Root)
-FROM node:22-alpine AS production
+# Stage 2: Production Minimal Runtime (Alpine Non-Root)
+FROM oven/bun:1.3.14-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+COPY package*.json bun.lock ./
+RUN bun install --production --frozen-lockfile
 COPY --from=builder /app/dist ./dist
 USER appuser
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=3s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
-CMD ["node", "dist/index.js"]
+CMD ["bun", "run", "dist/index.js"]
 ```
 
 ---
@@ -126,6 +126,6 @@ CMD ["node", "dist/index.js"]
 |---|---|---|---|
 | **Metrics** | Prometheus | Station online count, compartment occupancy rate, reservation latency histogram | P99 latency > 250ms for 5 mins |
 | **Distributed Tracing** | OpenTelemetry + Jaeger | Trace context propagation from HTTP headers (`traceparent`) to MQTT messages | Span error rate > 1% |
-| **Structured Logging** | Pino -> Grafana Loki | JSON-formatted stdout with `requestId`, `stationId`, `actorId`, `action` | Error log burst > 20/min |
+| **Structured Logging** | Pino -> Grafana Loki | JSON-formatted stdout with `requestId`, `stationId`, `actorId`, `action` พร้อมทำ PII Masking | Error log burst > 20/min |
 | **Error APM** | Sentry | Full stack trace capture with source maps & environment tags | Unhandled exception count > 0 |
 | **Station Heartbeat** | In-Memory Healthcheck | Station ping every 30s over MQTT | Missing 3 consecutive heartbeats (90s) triggers `STATION_OFFLINE` |
