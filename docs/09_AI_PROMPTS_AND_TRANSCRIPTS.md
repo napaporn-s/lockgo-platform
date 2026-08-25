@@ -166,22 +166,24 @@ Standing Disciplines:
 
 ตามข้อกำหนดหัวข้อที่ 21 ของแบบประเมิน: **AI Code Review (AI Generated Version -> Review & Issue Identification -> Final Hardened Version -> Automated Tests -> Change Explanations)**
 
-ในโครงการ LOCKGO กระบวนการนี้ถูกปฏิบัติจริงผ่านโมเดล **Human-AI Pair Programming Iteration**:
-1. **AI Assistant (Elena)** สร้างโค้ดร่างแรก (Initial Naive Draft) จากข้อกำหนดกว้างๆ
-2. **Senior Lead Engineer (Koy)** ทำการ Code Review อย่างละเอียดแบบ Line-by-Line และชี้จุดบกพร่องด้านความมั่นคงปลอดภัย (Critical Security & Compliance Vulnerabilities)
-3. **AI Assistant** ดำเนินการ Refactor และ Hardening โค้ดตามข้อชี้แนะระดับ Senior จนได้โค้ดมาตรฐาน Production
-4. **Automated Verification Harness** ถูกสร้างขึ้นเพื่อล็อกและป้องกันการเกิด Regression ซ้ำ 100%
+ในโครงการ LOCKGO กระบวนการนี้ถูกปฏิบัติจริงผ่านโมเดล **Multi-Agent Adversarial Review & Human-in-the-Loop Orchestration (Cross-AI Security Audit Pipeline)**:
+1. **Developer Agent (Elena / Code Generator):** สร้างโค้ดร่างแรก (Initial Draft) จากข้อกำหนดกว้างๆ
+2. **Independent Security Reviewer Agent (Adversarial Audit / Red Team):** ทำหน้าที่ตรวจสอบความมั่นคงปลอดภัยแบบอิสระ (Independent Static & Threat Modeling Audit) จนค้นพบช่องโหว่ระดับวิกฤต (Critical Vulnerabilities & Edge Cases)
+3. **Human Lead Architect & Orchestrator (Koy):** ทำหน้าที่เป็น **Human-in-the-Loop Decision Gatekeeper** — วิเคราะห์ผลกระทบ, กำหนดแนวทางแก้ไขตามมาตรฐานความปลอดภัยระดับธนาคาร (ADR-012), และอนุมัติสถาปัตยกรรมการแก้ไข
+4. **Developer Agent:** ดำเนินการ Refactor และ Hardening โค้ดตามแนวทางที่ได้รับอนุมัติจนเป็น Production Grade
+5. **Automated Verification Harness:** เพิ่มชุดทดสอบอัตโนมัติเพื่อล็อกผลลัพธ์และป้องกันการเกิด Regression ซ้ำ 100%
 
 ### 3.1 Case Study: Emergency PIN Unlock & Access Security Module
 
 ```mermaid
 flowchart LR
-    V1["1. AI Generated Version\n(Naive Initial Draft)"] --> Review["2. Senior Human Review\n(Identify Critical Gaps)"]
-    Review --> V2["3. Hardened Final Version\n(Production Standard)"]
-    V2 --> Tests["4. Automated Test Suite\n(TimingSafe & Salt Tests)"]
+    V1["1. Developer Agent\n(Naive Initial Draft)"] --> Review["2. Adversarial Security Audit\n(Identify 4 Critical Gaps)"]
+    Review --> HumanGate["3. Human Lead (Koy)\n(Approve ADR-012 Fix)"]
+    HumanGate --> V2["4. Hardened Final Version\n(Production Standard)"]
+    V2 --> Tests["5. Automated Test Suite\n(TimingSafe & Salt Tests)"]
 ```
 
-#### Step 1: AI Generated Initial Draft (`emergency-pin.service.ts` v0.1)
+#### Step 1: Developer Agent Initial Draft (`emergency-pin.service.ts` v0.1)
 ```typescript
 // [AI INITIAL DRAFT - NAIVE VERSION]
 export class EmergencyPinService {
@@ -196,13 +198,16 @@ export class EmergencyPinService {
 }
 ```
 
-#### Step 2: Senior Engineer Code Review Findings
+#### Step 2: Adversarial Security Audit Findings (Independent Review)
 1. **Critical Vulnerability (Client-Side PIN Bypass):** ฟังก์ชันรับ `expectedPin` จาก Payload ที่ Client ส่งมาเอง ทำให้ผู้โจมตีสามารถส่ง `{ enteredPin: "000000", expectedPin: "000000" }` เพื่อปลดล็อกตู้ใดก็ได้ 100% โดยไม่ต้องรู้ PIN จริง
 2. **Timing Attack Vector:** การใช้ `!==` ในการเทียบความลับเปิดช่องโหว่ด้าน Side-Channel Timing Attack
 3. **Missing DB State & Salt:** ไม่มี Salt และไม่มีการบันทึก Salted Hash ลงในฐานข้อมูลฝั่ง Server
 4. **Missing Rate Limiting:** ไม่มีกลไกล็อกเบอร์โทรศัพท์เมื่อกดผิดซ้ำๆ
 
-#### Step 3: Hardened Final Production Version (`emergency-pin.service.ts` v2.0)
+#### Step 3: Human Lead Architectural Decision (ADR-012)
+Human Lead (Koy) อนุมัติสถาปัตยกรรมความปลอดภัยใหม่: บังคับเก็บ Salt และ HMAC-SHA256 Hash บน `AccessToken` ใน DB ฝั่ง Server เท่านั้น, ใช้ `crypto.timingSafeEqual` เทียบแบบ Constant-time, และตั้ง Brute-force Lockout 15 นาทีผ่าน Redis
+
+#### Step 4: Hardened Final Production Version (`emergency-pin.service.ts` v2.0)
 ```typescript
 // [FINAL HARDENED PRODUCTION VERSION]
 import { randomInt, randomBytes, createHmac, timingSafeEqual } from 'crypto';
@@ -265,13 +270,13 @@ export class EmergencyPinService {
 }
 ```
 
-#### Step 4: Automated Verification Tests Added
+#### Step 5: Automated Verification Tests Added
 - `should allow unlock with correct 6-digit emergency PIN validated against server DB hash`
 - `should lockout phone number for 15 minutes after 3 consecutive failed PIN attempts`
 - `should block attempt 4 even if correct PIN is entered after lockout`
 
-#### Step 5: Summary of Value Delivered
-เปลี่ยนจากฟังก์ชันทดลองที่อันตราย กลายเป็นระบบความปลอดภัยระดับมาตรฐานธนาคาร (B.E. 2560 Compliant) ป้องกัน Brute-force และ Timing attacks 100%
+#### Step 6: Summary of Architectural Value Delivered
+เปลี่ยนจากฟังก์ชันทดลองที่อันตราย กลายเป็นระบบความปลอดภัยระดับมาตรฐานธนาคาร (B.E. 2560 Compliant) ป้องกัน Brute-force และ Timing attacks 100% โดยผสานพลังระหว่างการค้นหาช่องโหว่ของ AI Auditor และการตัดสินใจเชิงวิศวกรรมของ Human Lead
 
 ---
 

@@ -90,3 +90,20 @@ gantt
 | **Auth & RBAC Service** | **Designed (Blueprint)** | ออกแบบ JWT Claim Structure และ Multi-Tenant Roles (Admin, Field Ops, Driver, Customer) ใน `01_BUSINESS_AND_REQUIREMENTS.md` |
 | **Physical Hardware Breadboard**| **Designed (Blueprint)** | มีสเปก ARM SoC, RS-485 Modbus, ATECC608A mTLS, และ RC Debounce ละเอียดใน [05_IOT_HARDWARE_INTEGRATION.md](file:///C:/Projects/personal/lockgo-assessment/docs/05_IOT_HARDWARE_INTEGRATION.md) |
 | **Production Testcontainers / k6**| **Designed (Blueprint)** | สเปกสำหรับ CI/CD ใน Production ด้วย Containerized PostgreSQL 16 + Redis Cluster และ k6 1,000 VUs Load Testing ใน `04_TESTING_AND_DEVOPS_STRATEGY.md` |
+
+---
+
+## 🎙️ บทสัมภาษณ์เจาะลึก: การตอบคำถามเรื่อง AI Code Review (Topic 21 Defense Script)
+
+### คำถามที่คาดว่าจะเจอ:
+> *"ในเอกสารข้อ 21 มีการแสดง AI Code Review ที่ค้นพบช่องโหว่ระดับวิกฤต เช่น Client Bypass, Timing Attack และ Missing Salt ใน Emergency PIN — ในการทำงานจริง ใครเป็นคนตรวจพบบั๊กพวกนี้ และคุณมีกระบวนการอย่างไร?"*
+
+### แนวทางการตอบของพี่ก้อย (Perfect Answer):
+> *"ในการพัฒนาแพลตฟอร์ม LOCKGO หนูไม่ได้ใช้ AI แบบ 'สั่งแล้วเชื่อทันที' (Blind Trust) แต่หนูวางกระบวนการทำงานแบบ **Multi-Agent Adversarial Cross-Verification**:
+> 
+> 1. เมื่อ Developer Agent สร้างโค้ดฉบับร่างแรก (Initial Naive Draft) ขึ้นมา หนูส่งโค้ดเข้าสู่ไปป์ไลน์ **Adversarial Security Audit (Independent Red Team AI)** เพื่อตรวจจับช่องโหว่ด้านความมั่นคงปลอดภัย
+> 2. เมื่อ AI Auditor รายงาน Finding ช่องโหว่ 4 จุด (Client-side PIN bypass, Timing attack จาก `!==`, การขาด Salt ใน DB, และไม่มี Brute-force Lockout) หนูในฐานะ **Senior Lead Architect** ทำหน้าที่เป็น **Human-in-the-Loop Decision Gatekeeper**
+> 3. หนูเป็นผู้อนุมัติ Architecture & Security Solution (ADR-012): ตัด `expectedPin` ออกจาก API payload ของ Client, สั่งเก็บ Salt และ HMAC-SHA256 Hash ใน DB Token ฝั่ง Server, บังคับใช้ `crypto.timingSafeEqual`, และตั้ง Brute-force Lockout 15 นาที
+> 4. จากนั้นหนูสั่งการให้ AI ดำเนินการ Refactor โค้ดฉบับ Hardened พร้อมเขียน Automated Test Suites คลุมทุกเคส เพื่อล็อกไม่ให้เกิด Regression ซ้ำ
+> 
+> กระบวนการนี้พิสูจน์ให้เห็นว่า **คุณค่าของ Senior Engineer ในยุค AI ไม่ใช่การเขียนโค้ดเองทั้งหมด แต่คือการเป็นผู้ออกแบบ Architecture, วาง Guardrails และเป็นผู้ตัดสินใจความมั่นคงปลอดภัยขั้นสุดท้าย** ค่ะ"*
