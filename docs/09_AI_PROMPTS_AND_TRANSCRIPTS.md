@@ -166,11 +166,17 @@ Standing Disciplines:
 
 ตามข้อกำหนดหัวข้อที่ 21 ของแบบประเมิน: **AI Code Review (AI Generated Version -> Review & Issue Identification -> Final Hardened Version -> Automated Tests -> Change Explanations)**
 
+ในโครงการ LOCKGO กระบวนการนี้ถูกปฏิบัติจริงผ่านโมเดล **Human-AI Pair Programming Iteration**:
+1. **AI Assistant (Elena)** สร้างโค้ดร่างแรก (Initial Naive Draft) จากข้อกำหนดกว้างๆ
+2. **Senior Lead Engineer (Koy)** ทำการ Code Review อย่างละเอียดแบบ Line-by-Line และชี้จุดบกพร่องด้านความมั่นคงปลอดภัย (Critical Security & Compliance Vulnerabilities)
+3. **AI Assistant** ดำเนินการ Refactor และ Hardening โค้ดตามข้อชี้แนะระดับ Senior จนได้โค้ดมาตรฐาน Production
+4. **Automated Verification Harness** ถูกสร้างขึ้นเพื่อล็อกและป้องกันการเกิด Regression ซ้ำ 100%
+
 ### 3.1 Case Study: Emergency PIN Unlock & Access Security Module
 
 ```mermaid
 flowchart LR
-    V1["1. AI Generated Version\n(Naive Draft)"] --> Review["2. Senior Human Review\n(Identify Critical Flaws)"]
+    V1["1. AI Generated Version\n(Naive Initial Draft)"] --> Review["2. Senior Human Review\n(Identify Critical Gaps)"]
     Review --> V2["3. Hardened Final Version\n(Production Standard)"]
     V2 --> Tests["4. Automated Test Suite\n(TimingSafe & Salt Tests)"]
 ```

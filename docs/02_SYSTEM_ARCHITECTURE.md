@@ -174,15 +174,41 @@ stateDiagram-v2
 
 ```mermaid
 erDiagram
+    USERS ||--o{ ORDERS : places
+    ORDERS ||--|{ RESERVATIONS : contains
+    ORDERS ||--o| PAYMENTS : settles
     STATIONS ||--o{ COMPARTMENTS : contains
     STATIONS ||--o{ STATION_TELEMETRY : logs
     COMPARTMENTS ||--o{ RESERVATIONS : allocates
     COMPARTMENTS ||--o{ DISPOSAL_RECORDS : clears
-    USERS ||--o{ RESERVATIONS : books
-    RESERVATIONS ||--o| PAYMENTS : bills
     RESERVATIONS ||--o| ACCESS_TOKENS : secures
     PAYMENTS ||--o{ FINANCIAL_LEDGER_ENTRIES : records
     USERS ||--o{ AUDIT_LOGS : performs
+
+    USERS {
+        uuid id PK
+        string phone_number UK "Encrypted PDPA e.g. 081-***-4567"
+        string national_id UK "Encrypted PDPA 1-2345-*****-12-3"
+        string email "Encrypted PDPA e.g. jo***@example.com"
+        string full_name "Customer or Staff Name"
+        string role "CUSTOMER, DRIVER, FIELD_OPS, ADMIN"
+        boolean is_phone_verified "OTP Verified status"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ORDERS {
+        uuid id PK
+        uuid user_id FK
+        string order_number UK "e.g. ORD-2026-081923"
+        decimal total_amount "Gross total before discounts"
+        decimal discount_amount "Voucher / Promo discount"
+        decimal net_amount "Net amount charged to payment"
+        string status "PENDING, PAID, PARTIALLY_REFUNDED, REFUNDED, CANCELLED"
+        string order_type "SINGLE_PARCEL, BATCH_LAUNDRY, FOOD_DELIVERY"
+        timestamp created_at
+        timestamp updated_at
+    }
 
     STATIONS {
         uuid id PK
@@ -215,6 +241,7 @@ erDiagram
 
     RESERVATIONS {
         uuid id PK
+        uuid order_id FK "References Parent Order"
         uuid user_id FK
         uuid compartment_id FK
         string reservation_code UK "e.g. LK-948123"
@@ -234,7 +261,8 @@ erDiagram
         uuid id PK
         uuid reservation_id FK "Unique 1-to-1 with Reservation"
         string totp_secret "AES-256 encrypted secret"
-        string pickup_pin_hash "SHA-256 hash"
+        string pickup_pin_hash "HMAC-SHA256 salted hash"
+        string pickup_pin_salt "16-byte random salt"
         string status "ACTIVE, CONSUMED, REVOKED, EXPIRED"
         timestamp last_rotated_at
         timestamp expires_at
@@ -242,7 +270,8 @@ erDiagram
 
     PAYMENTS {
         uuid id PK
-        uuid reservation_id FK
+        uuid order_id FK "Linked to Order"
+        uuid reservation_id FK "Optional 1-to-1 direct reference"
         string idempotency_key UK
         decimal amount
         string currency "THB"
@@ -263,6 +292,17 @@ erDiagram
         timestamp timestamp
     }
 
+    STATION_TELEMETRY {
+        uuid id PK
+        uuid station_id FK
+        decimal ac_voltage "Mains voltage reading"
+        decimal battery_percent "LiFePO4 backup percentage"
+        decimal ambient_temp_celsius "Internal cabinet temp"
+        boolean is_mains_powered "True if AC grid active"
+        string cellular_signal_csq "4G Signal strength 0-31"
+        timestamp timestamp
+    }
+
     DISPOSAL_RECORDS {
         uuid id PK
         uuid compartment_id FK
@@ -280,9 +320,8 @@ erDiagram
         string action "RESERVE, UNLOCK, FORCE_UNLOCK, REFUND"
         string resource_type "COMPARTMENT, RESERVATION, STATION, PAYMENT"
         uuid resource_id
-        jsonb before_state "Masked PII"
-        jsonb after_state "Masked PII"
-        string ip_address
+        jsonb details "Recursive PDPA Masked PII"
+        string ip_address "Masked Subnet e.g. 192.168.10.***"
         timestamp timestamp
     }
 ```

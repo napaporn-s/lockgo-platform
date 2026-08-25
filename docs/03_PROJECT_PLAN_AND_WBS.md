@@ -116,17 +116,17 @@ flowchart TD
 
 ---
 
-## 7. Platform Engineering — Internal Tools Prioritization Matrix (Topic 19)
+## 7. Platform Engineering — Internal Developer Tooling Prioritization (Topic 19)
 
-การจัดลำดับความสำคัญของเครื่องมือภายใน (Internal Tools) ตามโมเดล **WSJF (Weighted Shortest Job First)** และ **RICE Framework**:
+การจัดลำดับความสำคัญของ **Internal Developer Tooling (เครื่องมือเพิ่มประสิทธิผลของทีมนักพัฒนาซอฟต์แวร์และ AI Coding Agents)** ตามโมเดล **WSJF (Weighted Shortest Job First)** และ **RICE Framework**:
 
-| ลำดับ | ชื่อเครื่องมือภายใน (Internal Tool) | กลุ่มผู้ใช้งานหลัก (Target Persona) | ประโยชน์ทางธุรกิจ / ปัญหาที่แก้ | Business Impact (1-5) | User Urgency (1-5) | Dev Effort (1-5) | WSJF Score | เทคโนโลยีที่เลือกใช้ | แผนการส่งมอบ |
+| ลำดับ | ชื่อเครื่องมือนักพัฒนา (Developer Tool) | กลุ่มเป้าหมาย (Target Engineers) | ปัญหาที่แก้ / คุณค่าที่ส่งมอบ | Business & Dev Impact (1-5) | Urgency (1-5) | Dev Effort (1-5) | WSJF Score | สถาปัตยกรรม & เทคโนโลยี | แผนส่งมอบ (Roadmap) |
 |---|---|---|---|---|---|---|---|---|---|
-| **P1** | **Central Station Telemetry & Desync Ops Console** | Central Ops & SRE | เฝ้าระวังตู้ล็อกเกอร์แบบเรียลไทม์ ตรวจจับเซ็นเซอร์ค้าง/กลอนติดขัด และกด Remote Reconcile | **5** (Critical) | **5** (High) | 2 (Med) | **5.00** | Nuxt 3 + Tailwind + WebSocket Telemetry | **Sprint 1 (Launch-Ready)** |
-| **P2** | **Customer Support Instant Refund & Compartment Override Portal** | Customer Support (Tier 1/2) | คืนเงิน Gross 100% ทันทีเมื่อผู้ใช้แจ้งตู้ติดขัด และสั่งเปิดตู้กรณีฉุกเฉินผ่าน HMAC Digital Signature | **5** (Critical) | **4** (High) | 2 (Med) | **4.50** | Retool / Nuxt Admin + MCP Stdio Bridge | **Sprint 1 (Launch-Ready)** |
-| **P3** | **Field Technician Mobile Diagnostic PWA** | Field Service Engineers | ตรวจสอบสุขภาพตู้หน้างานผ่าน Bluetooth BLE / Local Wi-Fi, สั่งทดสอบรีเลย์ทีละช่อง (Solenoid Pulse), และบันทึก Hot-swap อะไหล่ | **4** (High) | **4** (High) | 2 (Med) | **4.00** | Vite PWA (Offline-First) + Web Bluetooth API | **Sprint 2** |
-| **P4** | **IoT Fleet Remote Firmware & OTA Orchestrator** | IoT Platform Team | จัดการ Rollout A/B Firmware และ Docker Container ไปยังตู้ 500+ จุดทั่วประเทศ พร้อม Auto-Rollback | **4** (High) | **3** (Med) | 3 (High) | **2.33** | BalenaOS / EMQX MQTT OTA Management | **Sprint 3** |
-| **P5** | **Merchant & Laundry Partner Drop-off Portal** | B2B Food & Laundry Partners | ให้พาร์ทเนอร์ร้านค้าเปิดจองตู้ล็อตใหญ่ (Batch Booking) และดูเวลา SLA อาหาร 120 นาที | **3** (Med) | **3** (Med) | 3 (High) | **2.00** | Next.js / Vue + B2B REST API Gateway | **Sprint 4** |
+| **P1** | **Local Dev Sandbox & Virtual IoT Emulator (`bun run dev:sandbox`)** | Backend & QA Engineers | จำลองตู้ล็อกเกอร์เสมือน 10 ตู้, EMQX MQTT Broker, สัญญาณเซ็นเซอร์เด้ง (Bounce Noise), และกลอนติดขัดบน Localhost ทำให้นักพัฒนาทดสอบระบบได้ 100% โดยไม่ต้องต่อฮาร์ดแวร์จริง | **5** (Critical) | **5** (High) | 2 (Low) | **5.00** | Bun + Docker Compose + In-Memory MQTT Simulator | **Sprint 1 (Launch-Ready)** |
+| **P2** | **OpenAPI & AsyncAPI TypeSafe Code Generator** | Fullstack & Mobile Engineers | เจนเนอเรต TypeScript Types, Zod Schemas และ API Client อัตโนมัติจาก OpenAPI Contract ป้องกันปัญหา Data Contract Drift ระหว่าง Backend, Mobile และ AI Agents | **5** (Critical) | **4** (High) | 2 (Low) | **4.50** | Orval / OpenAPI-TS Generator + Git Hooks | **Sprint 1 (Launch-Ready)** |
+| **P3** | **Standardized CI/CD Golden Path Workflow Templates** | DevOps & All Squads | Reusable GitHub Actions Templates สำหรับ Strict Typecheck, Concurrency Race Stress Test, PII Redaction Audit, และ Docker Container Packaging สำเร็จรูป | **4** (High) | **4** (High) | 2 (Low) | **4.00** | GitHub Actions Reusable Workflows + Bun CI Action | **Sprint 2** |
+| **P4** | **`lockgo-cli` (Developer Scaffolding & Migration CLI)** | Software Engineers | คำสั่ง CLI สำหรับขึ้นโครงสร้าง Domain Module ใหม่ (เช่น อาหาร, ตู้แช่, ซักรีด), รัน Database Migration, และสร้าง Test Suites ตาม Strategy Pattern ใน 1 นาที | **4** (High) | **3** (Med) | 2 (Low) | **3.50** | Commander.js / Bun CLI + Plop.js Templates | **Sprint 2** |
+| **P5** | **Internal Developer Portal (IDP) & AI Skill Registry** | All Engineers & AI Agents | พอร์ทัลศูนย์กลางรวบรวม ADRs, Database Schema, MCP Tool Schemas, และ System Prompts สำหรับ Cursor/AGY เพื่อให้คนและ AI ดึง Context ไปใช้ได้ทันที | **3** (Med) | **3** (Med) | 3 (Med) | **2.00** | Backstage / Docusaurus + Markdown SSOT | **Sprint 3** |
 
 ---
 

@@ -3,7 +3,7 @@
 > **Role:** Site Reliability Engineer (SRE) & Platform Lead  
 > **Platform:** LOCKGO — Next-Gen Smart Locker Platform  
 > **Author:** Napaporn Suttinarksombat (Koy) & Elena (Technical Assistant)  
-> **Version:** 1.3.0 (Production SRE Runbooks with Silent Drop Playbook)
+> **Version:** 1.4.0 (Comprehensive SRE Incident Runbooks & Triage Framework)
 
 ---
 
@@ -97,12 +97,16 @@
 
 ### Playbook 7: INC-007 — Silent Conversion Drop (-30% Bookings under Normal Infra Telemetry) (P1) (Topic 11)
 
-#### 1. Scenario Description
-ยอดการจองตู้ลดฮวบลง 30% อย่างผิดปกติ แต่ระบบ Monitoring พื้นฐาน (Server CPU, RAM, Disk I/O, Database Load, Network Bandwidth) แสดงผลเป็นสีเขียว (Normal) 100% ทุกตัว
+#### 1. สถานการณ์และสิ่งที่ต้องตรวจก่อน (Initial Triaging & Symptoms)
+- **อาการ:** ยอดการจองสำเร็จ (Completed Reservations) ลดลง **30% ภายใน 30 นาที** เทียบกับ Baseline 7 วันก่อนหน้า แต่ระบบ Monitoring พื้นฐาน (CPU < 25%, RAM < 40%, Disk I/O 0%, DB Connection Pool ว่าง, HTTP 500 = 0%) เป็น **สีเขียว (Healthy) ทั้งหมด**
+- **สิ่งที่ต้องตรวจด่วนที่สุด (First 3 Checks):**
+  1. ตรวจสอบ **Conversion Funnel Drop-off Matrix** ในแต่ละขั้นตอน (Search Nearby -> View Slots -> Pre-Auth -> Reserve Lock)
+  2. ตรวจสอบ **Deployment Timeline** ใน 2 ชั่วโมงล่าสุด (มี Mobile App Release ใหม่, Web Gateway Deployment หรือ Third-Party Gateway API Update หรือไม่)
+  3. ตรวจสอบ **Geo-Spatial Distribution** ว่ายอดจองลดลงเฉพาะบางย่าน (e.g. Asoke/Siam) หรือลดลงทั่วทั้งประเทศ
 
 ```mermaid
 flowchart TD
-    Alert["🚨 Alert: Booking Volume Plunges -30% vs Baseline (Infra 100% Healthy)"] --> TriageFunnel["1. Triage User Funnel Step-by-Step"]
+    Alert["🚨 Alert: Completed Bookings Drop -30% vs Baseline (Infra 100% Healthy)"] --> TriageFunnel["1. Triage User Funnel Step-by-Step"]
 
     TriageFunnel --> Step1["Discovery Step: Search Nearby Stations\n(GET /api/stations)"]
     TriageFunnel --> Step2["Selection Step: View Compartments\n(GET /api/stations/:id/compartments)"]
@@ -118,25 +122,61 @@ flowchart TD
     CauseC --> ActionC["Resync NTP Clock Cluster & Revert Policy Hotfix"]
 ```
 
-#### 2. Root Cause Hypotheses & Diagnostic Flow
-1. **Hypothesis 1: Client Coordinate Inversion (Lat/Lng Swapped):**
-   - การปล่อยแอปมือถือเวอร์ชันใหม่สลับค่า `latitude` กับ `longitude` (เช่น ส่ง `100.56, 13.73` แทน `13.73, 100.56`) ส่งผลให้ PostGIS ค้นหาไม่พบสถานีใกล้เคียงในรัศมี ทำให้ผู้ใช้ไม่เห็นตู้ว่าง
-   - **Diagnostic Query:**
-     ```sql
-     SELECT request_payload->>'lat' AS lat, request_payload->>'lng' AS lng, COUNT(*)
-     FROM api_gateway_access_logs
-     WHERE path = '/api/stations' AND created_at > NOW() - INTERVAL '1 hour'
-     GROUP BY lat, lng HAVING CAST(request_payload->>'lat' AS FLOAT) > 90.0;
-     ```
-2. **Hypothesis 2: Third-Party Payment Gateway Silent Webhook Timeout:**
-   - เซิร์ฟเวอร์และฐานข้อมูลปกติ แต่ Payment Gateway มีอาการ Latency สูง (> 10s) ทำให้ผู้ใช้กดยกเลิกกลางคันก่อน Pre-Auth สำเร็จ
-   - **Diagnostic Check:** ตรวจสอบ P99 Response Time บน Endpoint `/api/payments/pre-authorize` และสถานะ Gateway Integration
-3. **Hypothesis 3: Domain Policy SLA Regression / Clock Skew:**
-   - เซิร์ฟเวอร์ API บางตัวมี NTP Clock Drift ทำให้คำสั่งตรวจสอบอาหาร (Food 120m SLA) ตีความเป็นเวลาติดลบและปฏิเสธคำขอ (`DOMAIN_POLICY_REJECTED`)
+#### 2. Log ที่ต้องดู (Diagnostic Structured Logs & Queries)
+1. **API Gateway Access Logs (ค้นหา Zero-Result Searches & Status 4xx):**
+   ```sql
+   -- ตรวจสอบ Request ที่ค้นหาสถานีแต่ได้ผลลัพธ์ว่างเปล่า (Empty Results)
+   SELECT client_version, request_payload->>'lat' AS lat, request_payload->>'lng' AS lng, response_body_count, COUNT(*)
+   FROM api_gateway_access_logs
+   WHERE path = '/api/stations' AND created_at > NOW() - INTERVAL '30 minutes'
+   GROUP BY client_version, lat, lng, response_body_count
+   HAVING response_body_count = 0
+   ORDER BY count DESC;
+   ```
+2. **Audit Logs สำหรับ Domain Policy Rejections:**
+   ```sql
+   -- ตรวจสอบว่ามีคำสั่งจองถูกปฏิเสธด้วย Business Policy หรือไม่
+   SELECT action, details->>'reason' AS rejection_reason, COUNT(*)
+   FROM audit_logs
+   WHERE action = 'DOMAIN_POLICY_REJECTED' AND timestamp > (EXTRACT(EPOCH FROM NOW() - INTERVAL '30 minutes') * 1000)
+   GROUP BY action, rejection_reason;
+   ```
 
-#### 3. Immediate SRE Triage & Mitigation Actions
-1. **Step 1 (Isolate Drop-off Stage):** สรุป Conversion Rate ต่อ Step ใน Funnel เทียบกับ Baseline 7 วันก่อนหน้า เพื่อหาขั้นตอนที่ Drop-off สูงผิดปกติ
-2. **Step 2 (Inspect Error Distribution):** ตรวจสอบ HTTP Status 4xx (เช่น 400 Domain Reject หรือ 404 No Station Found) ผ่าน Structured Audit Logs
-3. **Step 3 (Mitigate):**
-   - หากเป็น Coordinate Bug ในแอป: เปิดใช้งาน Layer Gateway Adapter ให้ช่วยตรวจจับและสลับพิกัด Lat/Lng อัตโนมัติทันทีที่ขอบเขตผิดปกติ
-   - หากเป็น Payment Gateway ช้า: สลับ Routing ไปยัง Backup Payment Provider ผ่าน Feature Flag
+#### 3. Metrics สำคัญที่ต้องเฝ้าระวัง (Key Metrics & SLOs)
+- **Funnel Drop-off Rate per Step:** Discovery-to-Select (เป้าหมาย $\ge 75\%$), Select-to-PreAuth (เป้าหมาย $\ge 60\%$), PreAuth-to-Reserved (เป้าหมาย $\ge 95\%$)
+- **P99 API Latency per Route:** `/api/stations` ($< 50\text{ms}$), `/api/payments/pre-authorize` ($< 300\text{ms}$)
+- **HTTP 4xx Client Error Ratio:** หาก HTTP 400 หรือ 404 พุ่งสูงขึ้นเกิน $5\%$ ของ Traffic รวม แสดงว่าเกิด Client-Side Contract Incompatibility
+
+#### 4. Trace & Spans (Distributed Tracing Analysis via OpenTelemetry)
+- ค้นหา Traces ที่มีสถานะ `HTTP 200` แต่มี `Span Duration > 3000ms` บน Third-Party Payment Egress
+- ตรวจสอบ Span: `APIGateway -> Express/Bun Dispatcher -> PaymentGateway.preAuthorize() -> BankWebhook`
+- หากพบ Span `PaymentGateway.preAuthorize()` ค้างจน Timeout 5,000ms แล้ว Client กดยกเลิกกลางคัน นั่นคือสาเหตุของ Silent Drop
+
+#### 5. วิธีแยกปัญหา (Root Cause Differential Isolation Matrix)
+
+| สมมติฐานสาเหตุ (Hypothesis) | อาการที่พบใน Log & Trace | เครื่องมือยืนยัน (Verification Tool) | ผลสรุป |
+|---|---|---|---|
+| **A. Mobile Coordinate Inversion** | ผู้ใช้ค้นหาสถานีสำเร็จ (200 OK) แต่ได้ Array เปล่า `data: []` พิกัดใน Log เป็น `lat: 100.56, lng: 13.73` (สลับพิกัดไทย) | PostGIS ST_DWithin Test Query | **Client App Release Bug** |
+| **B. Payment Gateway Silent Latency** | Pre-Auth ค้างเกิน 8 วินาที ผู้ใช้กดยกเลิกหน้าจอก่อนจ่ายสำเร็จ | OpenTelemetry Trace Spans | **Third-Party Provider Degraded** |
+| **C. NTP Clock Skew บน API Nodes** | Food SLA Reject บ่นว่าเวลาหมดอายุติดลบ (`holdDuration <= 0`) | `chronyc tracking` บนโหนด API | **Infrastructure Clock Drift** |
+
+#### 6. วิธี Rollback & บรรเทาผลกระทบละเอียดทีละขั้นตอน (Step-by-Step Rollback & Immediate Mitigation)
+1. **กรณีเป็น Coordinate Inversion จาก Mobile Release:**
+   - **มาตรการเฉพาะหน้า (Hotfix in < 2 นาที):** เปิดใช้งาน API Gateway Edge Rule (Envoy / Traefik WASM Filter) ทำ Coordinate Sanitizer: หาก `lat > 90.0` ให้สลับ `lat` กับ `lng` อัตโนมัติก่อนส่งเข้า PostGIS
+   - **Rollback Client:** ปิดบังคับอัปเดตเวอร์ชันใหม่ใน Firebase Remote Config และสั่ง Rollback ใน Play Store / App Store
+2. **กรณีเป็น Payment Gateway Timeout:**
+   - **สลับ Standby Route (Failover in < 1 นาที):** สลับ Feature Flag `PAYMENT_GATEWAY_PROVIDER=BACKUP_PROVIDER_B` ผ่าน LaunchDarkly / Redis Config
+3. **คำสั่ง Rollback Container Deployment (กรณีเกิดจาก Backend Release):**
+   ```bash
+   # 1. Rollback Deployment บน Kubernetes / Docker Swarm
+   kubectl rollout undo deployment/lockgo-api-core --to-revision=PREVIOUS_REVISION
+   
+   # 2. ตรวจสอบสถานะ Pods และ Healthcheck
+   kubectl rollout status deployment/lockgo-api-core
+   curl -f http://localhost:3000/api/health
+   ```
+
+#### 7. วิธีป้องกันไม่ให้เกิดซ้ำ (Post-Mortem & Preventative Measures)
+1. **Automated Synthetic Canary User (E2E Probing):** สร้าง Synthetic Worker อัตโนมัติรันทุก **2 นาที** ดำเนินการค้นหาตู้ -> จองช่องทดสอบ -> Pre-auth 1 บาท -> ปลดล็อก -> ยกเลิก หาก Canary ล้มเหลวให้ยิง Alert P1 เข้า PagerDuty ทันทีโดยไม่ต้องรอให้ยอดรวมตก 30%
+2. **Contract-Driven API Testing:** บังคับรัน OpenAPI Schema Validation ใน CI/CD ทุกครั้งที่ Frontend / Mobile Release
+3. **NTP Monitoring Alert:** ตั้ง Alert บน Prometheus หาก NTP Offset บนโหนดใดๆ เกิน $50\text{ms}$ ให้แจ้งเตือนทันที
