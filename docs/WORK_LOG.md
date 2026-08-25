@@ -55,7 +55,7 @@
   - Added Power Outage load-shedding and Door Ajar alert handlers (ADR-009, ADR-010).
   - Created REST API Gateway and Live HTTP Server with `Bun.serve` on port 3000 (`src/index.ts`).
   - Created DevOps infrastructure: `Dockerfile`, `docker-compose.yml`, `.github/workflows/ci.yml`.
-  - Documented SRE Runbooks (`docs/07_SRE_INCIDENT_RUNBOOK.md`), API Spec (`docs/08_API_SPECIFICATION.md`), AI Prompts (`docs/09_AI_PROMPTS_AND_TRANSCRIPTS.md`), and Interview Defense Guide (`docs/10_TECHNICAL_INTERVIEW_DEFENSE_GUIDE.md`).
+  - Documented SRE Runbooks (`docs/07_SRE_INCIDENT_RUNBOOK.md`), API Spec (`docs/08_API_SPECIFICATION.md`), and AI Prompts (`docs/09_AI_PROMPTS_AND_TRANSCRIPTS.md`).
 
 ### Session 4: Rigorous Code Audit, Security Hardening & Protocol Implementation
 - **Timestamp:** 2026-08-25 07:30 – 08:30+07:00
@@ -64,7 +64,7 @@
   - **Real MCP Server (JSON-RPC 2.0):** Upgraded `src/mcp/server.ts` to implement full JSON-RPC 2.0 stdio transport supporting `initialize`, `tools/list`, and `tools/call` with Cryptographic HMAC-SHA256 Digital Signature Human Approval Gate.
   - **Two-Phase Payment & Double-Entry Ledger:** Implemented `src/modules/payment/payment.service.ts` with Pre-Auth, Capture, Idempotent Instant 100% Gross Refund, and Double-Entry Ledger entries.
   - **Timing-Attack Defense:** Replaced all string equality comparisons in HMAC signatures and PINs with `crypto.timingSafeEqual`.
-  - **Documentation Refactoring:** Renumbered `docs/` files uniquely (01 to 10), removed stray root artifacts, and updated `README.md` with transparent scope matrices.
+  - **Documentation Refactoring:** Renumbered `docs/` files uniquely (01 to 09), removed stray root artifacts, and updated `README.md` with transparent scope matrices.
 
 ### Session 5: Deep-Audit Rectification, PDPA PII Masking & Complete Topic Coverage
 - **Timestamp:** 2026-08-25 08:20 – 08:35+07:00
@@ -75,10 +75,9 @@
   - **Topic 5 (Domain Design & ERD):** Added `ORDERS` entity to PostgreSQL 16 ERD in `docs/02_SYSTEM_ARCHITECTURE.md` with complete attribute blocks for all 10 entities.
   - **Topic 21 (AI Code Review Attribution):** Framed the collaborative review loop as Multi-Agent Adversarial Review & Human-in-the-Loop Orchestration.
 
-### Session 6: Final Alignment, ADR-014 Inclusion & Interview Readiness
+### Session 6: Final Alignment, ADR-014 Inclusion & Production Delivery
 - **Timestamp:** 2026-08-25 08:50 – 09:00+07:00
 - **Activities:**
   - Added ADR-014 (PDPA PII Masking) and updated ADR-005 / ADR-012 in `docs/DECISIONS.md`.
-  - Added full Speaking Defense Script for Topic 21 in `docs/10_TECHNICAL_INTERVIEW_DEFENSE_GUIDE.md`.
-  - Validated syntax of all 22 Mermaid diagrams across 13 Markdown files (0 errors).
+  - Validated syntax of all 22 Mermaid diagrams across 12 Markdown files (0 errors).
   - Executed strict TypeScript compile and Bun test suite (41/41 tests passing 100% green).

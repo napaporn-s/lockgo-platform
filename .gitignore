@@ -7,3 +7,8 @@ dist/
 .DS_Store
 Thumbs.db
 *.pdf
+
+# Candidate Internal Interview Preparation Notes (Not part of submission)
+interview-prep/
+docs/10_TECHNICAL_INTERVIEW_DEFENSE_GUIDE.md
+scripts/verify-mermaid.ts
